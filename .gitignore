@@ -40,3 +40,4 @@ out/
 /application.yml
 /.env
 /secrets/
+/src/main/resources/application.yml
