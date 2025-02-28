@@ -1,85 +1,69 @@
 package com.uzem.book_cycle.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Getter;
+import com.uzem.book_cycle.redis.RedisUtil;
+import com.uzem.book_cycle.security.jwt.JwtAccessDeniedHandler;
+import com.uzem.book_cycle.security.jwt.JwtAuthenticationEntryPoint;
+import com.uzem.book_cycle.security.jwt.JwtFilter;
+import com.uzem.book_cycle.security.token.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
-
-import java.io.PrintWriter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.CorsFilter;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final TokenProvider tokenProvider;
+    private final CorsFilter corsFilter;
+    private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+    private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    private final RedisUtil redisUtil;
+
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        http
+                .csrf(csrf -> csrf.disable())
+
+                .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class) // CORS 필터 추가
+                .addFilterBefore(new JwtFilter(tokenProvider, redisUtil), UsernamePasswordAuthenticationFilter.class) // JwtFilter 직접 등록
+                .exceptionHandling(exception -> {
+                    exception.accessDeniedHandler(jwtAccessDeniedHandler);
+                    exception.authenticationEntryPoint(jwtAuthenticationEntryPoint);
+                })
+
+                .sessionManagement(sessionManagement ->
+                        sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+
+                .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
+                        .requestMatchers("/api/v2/admin/**").hasRole("ADMIN") // ROLE_ 자동 추가됨
+                        .requestMatchers("/auth/**").permitAll() // 로그인, 회원가입은 열어주기
+                        .anyRequest().authenticated()
+                );
+
+        return http.build();
+    }
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-        http
-                .csrf(crsf -> crsf.disable()
-                )
-                .headers((headersConfig) ->
-                        headersConfig.frameOptions(frameOptionsConfig ->
-                                frameOptionsConfig.disable()
-                        )
-                )
-                .authorizeHttpRequests((authorizeHttpRequests) ->
-                        authorizeHttpRequests
-/*                                .requestMatchers("/h2-console/**").permitAll()
-                                .requestMatchers("/", "/login/**").permitAll()
-                                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                                .requestMatchers("/posts/**", "/api/v1/posts/**").hasRole("USER")
-                                .requestMatchers("/admins/**", "/api/v1/admins/**").hasRole("ADMIN")
-                                .anyRequest().authenticated()*/
-                                .anyRequest().permitAll()
-                        )
-                .exceptionHandling((exceptionConfig) ->
-                        exceptionConfig.authenticationEntryPoint(unauthorizedEntryPoint)
-                );
-        return http.build();
-    }
-
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private final AuthenticationEntryPoint unauthorizedEntryPoint =
-            (request, response, authException) -> {
-                ErrorResponse fail = new ErrorResponse(HttpStatus.UNAUTHORIZED, "Spring security unauthorized...");
-                response.setStatus(HttpStatus.UNAUTHORIZED.value());
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                PrintWriter writer = response.getWriter();
-                writer.write(objectMapper.writeValueAsString(fail));
-                writer.flush();
-            };
-
-    private final AccessDeniedHandler accessDeniedHandler =
-            (request, response, accessDeniedException) -> {
-                ErrorResponse fail = new ErrorResponse(HttpStatus.FORBIDDEN, "Spring security forbidden...");
-                response.setStatus(HttpStatus.FORBIDDEN.value());
-                response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                PrintWriter writer = response.getWriter();
-                writer.write(objectMapper.writeValueAsString(fail));
-                writer.flush();
-            };
-
-
-    @Getter
-    @RequiredArgsConstructor
-    public static class ErrorResponse {
-
-        private final HttpStatus status;
-        private final String message;
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }
+
