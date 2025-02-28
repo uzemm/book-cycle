@@ -14,7 +14,7 @@ public class MemberException extends RuntimeException{
 
     public MemberException(MemberErrorCode memberErrorCode) {
         this.memberErrorCode = memberErrorCode;
-        this.errorMessage = errorMessage;
+        this.errorMessage = memberErrorCode.getDescription();
     }
 
 }
