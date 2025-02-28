@@ -1,26 +1,40 @@
 package com.uzem.book_cycle.auth.service;
 
+import com.uzem.book_cycle.auth.dto.LoginRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.email.entity.EmailVerification;
 import com.uzem.book_cycle.auth.email.repository.EmailVerificationRepository;
 import com.uzem.book_cycle.auth.email.service.EmailService;
+import com.uzem.book_cycle.security.token.TokenDTO;
+import com.uzem.book_cycle.security.token.TokenProvider;
 import com.uzem.book_cycle.exception.MemberException;
+import com.uzem.book_cycle.exception.TokenException;
 import com.uzem.book_cycle.member.dto.MemberDTO;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.member.type.MemberErrorCode;
+import com.uzem.book_cycle.redis.RedisUtil;
+import com.uzem.book_cycle.security.token.TokenErrorCode;
+import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
+import static com.uzem.book_cycle.member.type.MemberErrorCode.*;
 import static com.uzem.book_cycle.member.type.MemberStatus.ACTIVE;
 import static com.uzem.book_cycle.member.type.MemberStatus.PENDING;
 import static com.uzem.book_cycle.member.type.Role.USER;
+import static com.uzem.book_cycle.security.token.TokenErrorCode.INVALID_REFRESH_TOKEN;
 
 @Service
 @RequiredArgsConstructor
@@ -29,6 +43,10 @@ public class AuthService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationRepository emailRepository;
+    private final AuthenticationManager authenticationManager;
+    private final TokenProvider tokenProvider;
+    private final RedisUtil redisUtil;
+    private final UserDetailsService userDetailsService;
 
     @Transactional
     public MemberDTO signUp(SignUpRequestDTO request) {
@@ -42,7 +60,6 @@ public class AuthService {
                 .role(USER)
                 .status(PENDING)
                 .rentalCnt(0)
-                .refreshToken("")
                 .point(0L)
                 .isDeleted(false)
                 .socialId(null)
@@ -55,7 +72,8 @@ public class AuthService {
         memberRepository.save(member); //회원저장
 
         //인증코드 생성
-        String verificationCode = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        String verificationCode = UUID.randomUUID().toString().replace("-", "")
+                .substring(0, 8).toUpperCase();
         EmailVerification emailVerification  = EmailVerification.builder()
                 .member(member)
                 .email(request.getEmail())
@@ -82,10 +100,13 @@ public class AuthService {
     }
 
     @Transactional
-    public EmailVerificationResponseDTO verifyCheck(String email, String verificationCode) throws MemberException {
+    public EmailVerificationResponseDTO verifyCheck(String email, String verificationCode)
+            throws MemberException {
         //인증코드를 찾는다
-        EmailVerification emailVerification = emailRepository.findByEmailAndVerificationCode(email, verificationCode)
-                .orElseThrow(() -> new MemberException(MemberErrorCode.EMAIL_VERIFICATION_CODE_INVALID));
+        EmailVerification emailVerification =
+                emailRepository.findByEmailAndVerificationCode(email, verificationCode)
+                .orElseThrow(() -> new MemberException
+                        (MemberErrorCode.EMAIL_VERIFICATION_CODE_INVALID));
 
         validationVerifyEmail(emailVerification);
 
@@ -113,6 +134,80 @@ public class AuthService {
         if(emailVerification.getExpiresAt().isBefore(LocalDateTime.now())){
             throw new MemberException(MemberErrorCode.EMAIL_VERIFICATION_CODE_EXPIRED);
         }
+    }
+
+    @Transactional
+    public TokenDTO login(LoginRequestDTO loginRequestDTO) {
+        //회원 조회
+        Member member = memberRepository.findByEmail(loginRequestDTO.getEmail())
+                .orElseThrow(() -> new MemberException(INCORRECT_ID_OR_PASSWORD));
+        //회원 상태 조회
+        if(member.getStatus() == PENDING){
+            throw new MemberException(EMAIL_NOT_VERIFIED);
+        }
+
+        //사용자 인증
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        loginRequestDTO.getEmail(), loginRequestDTO.getPassword())
+        );
+        // JWT 토큰 생성 (엑세스 30분, 리프레시 2주)
+        TokenDTO tokenDto = tokenProvider.generateTokenDto(authentication);
+
+        // Redis에 기존 리프레시 토큰이 있으면 삭제 (보안 강화)
+        redisUtil.delete(loginRequestDTO.getEmail());
+
+        // Redis에 저장 (자동 만료 설정)
+        redisUtil.save(loginRequestDTO.getEmail(), tokenDto.getRefreshToken());
+
+        return tokenDto;
+    }
+
+    @Transactional
+    public void logout(String accessToken, String email) {
+        // 로그아웃 시 리프레시 토큰 삭제 (로그인 유지 X)
+        redisUtil.delete(email);
+
+        // Access Token blacklist에 등록하여 만료시키기
+        long expiration = tokenProvider.getExpiration(accessToken);
+        if(expiration > 0){
+            redisUtil.setBlackList(accessToken, "access_token", expiration);
+        }
+    }
+
+    //엑세스 재발급
+    @Transactional
+    public TokenDTO reissueAccessToken(String refreshToken) {
+         // 리프레시 토큰 검증
+        if (!tokenProvider.validateToken(refreshToken)) {
+            throw new TokenException(INVALID_REFRESH_TOKEN);
+        }
+        // 리프레시 토큰에서 클레임 추출
+        Claims claims = tokenProvider.getClaimsFromValidToken(refreshToken);
+        // 토큰의 타입 리프레시 토큰이 맞는지
+        if (!Boolean.TRUE.equals(claims.get("isRefreshToken"))) {
+            throw new TokenException(TokenErrorCode.NOT_A_REFRESH_TOKEN);
+        }
+
+        // DB에서 사용자 정보 조회 (추가 검증)
+        String email = claims.getSubject();
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        // 현재 시간과 비교하여 만료 여부 체크
+        Date expirationDate = claims.getExpiration();
+        long expirationTime = expirationDate.getTime();
+        if (System.currentTimeMillis() > expirationTime) {
+            throw new TokenException(TokenErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+
+        // Redis에서 해당 사용자의 리프레시 토큰이 존재하는지 확인 (보안 강화)
+        String storeRefreshToekn = redisUtil.get(email);
+        if(storeRefreshToekn == null || !storeRefreshToekn.equals(refreshToken)){
+            throw new TokenException(INVALID_REFRESH_TOKEN);
+        }
+
+        return tokenProvider.reissueAccessToken(refreshToken);
     }
 
 }
