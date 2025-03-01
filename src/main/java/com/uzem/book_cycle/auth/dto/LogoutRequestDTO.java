@@ -13,8 +13,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class LogoutRequestDTO {
 
-    private String email;
-
     @NotBlank
     private String accessToken;
 }

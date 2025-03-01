@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +33,7 @@ import static com.uzem.book_cycle.member.type.MemberErrorCode.*;
 import static com.uzem.book_cycle.member.type.MemberStatus.ACTIVE;
 import static com.uzem.book_cycle.member.type.MemberStatus.PENDING;
 import static com.uzem.book_cycle.member.type.Role.USER;
-import static com.uzem.book_cycle.security.token.TokenErrorCode.INVALID_REFRESH_TOKEN;
+import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +45,6 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
-    private final UserDetailsService userDetailsService;
 
     @Transactional
     public MemberDTO signUp(SignUpRequestDTO request) {
@@ -164,7 +162,10 @@ public class AuthService {
     }
 
     @Transactional
-    public void logout(String accessToken, String email) {
+    public void logout(String accessToken) {
+        // tokenProvider에서 email 정보 가져옴
+        String email = tokenProvider.getAuthentication(accessToken).getName();
+
         // 로그아웃 시 리프레시 토큰 삭제 (로그인 유지 X)
         redisUtil.delete(email);
 
@@ -180,7 +181,7 @@ public class AuthService {
     public TokenDTO reissueAccessToken(String refreshToken) {
          // 리프레시 토큰 검증
         if (!tokenProvider.validateToken(refreshToken)) {
-            throw new TokenException(INVALID_REFRESH_TOKEN);
+            throw new TokenException(INVALID_TOKEN);
         }
         // 리프레시 토큰에서 클레임 추출
         Claims claims = tokenProvider.getClaimsFromValidToken(refreshToken);
@@ -198,13 +199,13 @@ public class AuthService {
         Date expirationDate = claims.getExpiration();
         long expirationTime = expirationDate.getTime();
         if (System.currentTimeMillis() > expirationTime) {
-            throw new TokenException(TokenErrorCode.REFRESH_TOKEN_EXPIRED);
+            throw new TokenException(EXPIRED_TOKEN);
         }
 
         // Redis에서 해당 사용자의 리프레시 토큰이 존재하는지 확인 (보안 강화)
         String storeRefreshToekn = redisUtil.get(email);
         if(storeRefreshToekn == null || !storeRefreshToekn.equals(refreshToken)){
-            throw new TokenException(INVALID_REFRESH_TOKEN);
+            throw new TokenException(INVALID_TOKEN);
         }
 
         return tokenProvider.reissueAccessToken(refreshToken);
