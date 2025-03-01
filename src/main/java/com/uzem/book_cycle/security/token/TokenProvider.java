@@ -5,6 +5,7 @@ import com.uzem.book_cycle.redis.RedisUtil;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import java.security.Key;
 import java.time.Duration;
@@ -27,7 +29,9 @@ import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
 
     private static final String AUTHORITIES_KEY = "auth";
-    private static final String BEARER_TYPE = "Bearer";
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+    public static final String BEARER_PREFIX = "Bearer ";
+
     private static final long ACCESS_TOKEN_EXPIRE_TIME = Duration.ofMinutes(30).toMillis(); // 30분
     private static final long REFRESH_TOKEN_EXPIRE_TIME = Duration.ofDays(14).toMillis(); // 2주
 
@@ -52,7 +56,7 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         long now = (new Date()).getTime();
 
         return TokenDTO.builder()
-                .grantType(BEARER_TYPE)
+                .grantType(BEARER_PREFIX)
                 .accessToken(accessToken)
                 .accessTokenExpiresIn(new Date(now + ACCESS_TOKEN_EXPIRE_TIME).getTime())
                 .refreshToken(refreshToken)
@@ -63,7 +67,7 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     public TokenDTO reissueAccessToken(String refreshToken) {
         // Refresh Token 검증 및 클레임에서 Refresh Token 여부 확인
         if (!validateToken(refreshToken)) {
-            throw new TokenException(INVALID_REFRESH_TOKEN);
+            throw new TokenException(INVALID_TOKEN);
         }
 
         // 리프레시 토큰에서 사용자 정보 추출 -> 클레임 확인
@@ -82,7 +86,7 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         long accessTokenExpiresIn = System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME;
 
         return TokenDTO.builder()
-                .grantType(BEARER_TYPE)
+                .grantType(BEARER_PREFIX)
                 .accessToken(newAccessToken)
                 .accessTokenExpiresIn(accessTokenExpiresIn)
                 .refreshToken(refreshToken)
@@ -144,17 +148,21 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
      * JWT 유효성 검사
      */
     public boolean validateToken(String token) {
+        //null 체크 추가
+        if(token == null || token.isBlank()) {
+            throw new TokenException(ILLEGAL_TOKEN);
+        }
         try {
             Jwts.parser().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
-            throw new TokenException(INVALID_REFRESH_TOKEN);
+            throw new TokenException(INVALID_TOKEN);
         } catch (ExpiredJwtException e) {
-            throw new TokenException(REFRESH_TOKEN_EXPIRED);
+            throw new TokenException(EXPIRED_TOKEN);
         } catch (UnsupportedJwtException e) {
             throw new TokenException(UNSUPPORTED_TOKEN);
         } catch (IllegalArgumentException e) {
-            throw new TokenException(ILLEGAL_ARGUMENT);
+            throw new TokenException(ILLEGAL_TOKEN);
         }
     }
 
@@ -174,7 +182,7 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
      */
     public Claims getClaimsFromValidToken(String refreshToken) {
         if (!validateToken(refreshToken)) {
-            throw new TokenException(TokenErrorCode.INVALID_REFRESH_TOKEN);
+            throw new TokenException(INVALID_TOKEN);
         }
 
         return parseClaims(refreshToken);
@@ -201,5 +209,18 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
             // 예외 발생 시 0 반환 (잘못된 토큰일 가능성)
             return 0;
         }
+    }
+
+    /**
+     * 요청 헤더에서 JWT 토큰을 추출하는 메서드
+     */
+    public String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
+        log.debug("🔍 Authorization 헤더 값: {}", bearerToken);
+        //요청 헤더에서 Authorization: Bearer <JWT> 형식 JWT 추출
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
+            return bearerToken.substring(BEARER_PREFIX.length()); // 유지보수성을 위해 7 대신 BEARER_PREFIX.length() 사용
+        }
+        return null;
     }
 }

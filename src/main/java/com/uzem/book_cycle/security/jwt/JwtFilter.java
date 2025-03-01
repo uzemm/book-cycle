@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+
 import java.io.IOException;
 
 @Slf4j
@@ -31,8 +31,20 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws IOException, ServletException {
 
+        // 요청 URI 가져오기
+        String requestURI = request.getRequestURI();
+
+        // JWT 검증을 하지 않고 바로 다음 필터로 넘김
+        if (requestURI.startsWith("/auth/signup") || requestURI.startsWith("/auth/login")
+                || requestURI.startsWith("/auth/verify-check")
+                || requestURI.startsWith("/auth/refresh")) {
+            log.debug("✅ 인증 예외 경로 요청: {}", requestURI);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         // 1. Request Header 에서 JWT 토큰 추출
-        String jwt = resolveToken(request);
+        String jwt = tokenProvider.resolveToken(request);
 
         try {
             // 2. JWT 토큰이 존재하고 유효한 경우
@@ -44,25 +56,13 @@ public class JwtFilter extends OncePerRequestFilter {
                 // 토큰이 유효하면 인증 객체 설정
                 Authentication authentication = tokenProvider.getAuthentication(jwt);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.info("✅ JWT 인증 성공: {}", authentication.getName());
+                log.info("JWT 인증 성공: {}", authentication.getName());
             }
         } catch (TokenException e) {
-            log.warn("❌ JWT 검증 실패: {}", e.getMessage());
+            log.debug("JWT 검증 실패: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
-    }
-
-    /**
-     * 요청 헤더에서 JWT 토큰을 추출하는 메서드
-     */
-    private String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        //요청 헤더에서 Authorization: Bearer <JWT> 형식 JWT 추출
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(BEARER_PREFIX.length()); // ✅ 유지보수성을 위해 7 대신 BEARER_PREFIX.length() 사용
-        }
-        return null;
     }
 
     /**
@@ -71,4 +71,5 @@ public class JwtFilter extends OncePerRequestFilter {
     public boolean isBlackList(String accessToken) {
         return redisUtil.exists(BLACKLIST_PREFIX  + accessToken);
     }
+
 }
