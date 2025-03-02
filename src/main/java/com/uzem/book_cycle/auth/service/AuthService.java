@@ -19,6 +19,7 @@ import com.uzem.book_cycle.security.token.TokenErrorCode;
 import io.jsonwebtoken.Claims;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,6 +36,7 @@ import static com.uzem.book_cycle.member.type.MemberStatus.PENDING;
 import static com.uzem.book_cycle.member.type.Role.USER;
 import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -134,29 +136,37 @@ public class AuthService {
         }
     }
 
-    @Transactional
+
     public TokenDTO login(LoginRequestDTO loginRequestDTO) {
+        log.debug(" 로그인 요청: {}", loginRequestDTO.getEmail());
         //회원 조회
         Member member = memberRepository.findByEmail(loginRequestDTO.getEmail())
                 .orElseThrow(() -> new MemberException(INCORRECT_ID_OR_PASSWORD));
+        log.debug(" 회원 조회 성공: {}", member.getEmail());
         //회원 상태 조회
         if(member.getStatus() == PENDING){
+            log.debug(" 이메일 미인증 회원 로그인 시도: {}", member.getEmail());
             throw new MemberException(EMAIL_NOT_VERIFIED);
         }
 
         //사용자 인증
+        log.debug(" 사용자 인증 시도: {}", loginRequestDTO.getEmail());
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequestDTO.getEmail(), loginRequestDTO.getPassword())
         );
+        log.debug(" 사용자 인증 성공: {}", authentication.getName());
+
         // JWT 토큰 생성 (엑세스 30분, 리프레시 2주)
         TokenDTO tokenDto = tokenProvider.generateTokenDto(authentication);
+        log.debug(" JWT 토큰 생성 완료: {}", tokenDto.getAccessToken());
 
         // Redis에 기존 리프레시 토큰이 있으면 삭제 (보안 강화)
         redisUtil.delete(loginRequestDTO.getEmail());
 
         // Redis에 저장 (자동 만료 설정)
         redisUtil.save(loginRequestDTO.getEmail(), tokenDto.getRefreshToken());
+        log.debug(" Redis에 Refresh Token 저장 완료: {}", loginRequestDTO.getEmail());
 
         return tokenDto;
     }
