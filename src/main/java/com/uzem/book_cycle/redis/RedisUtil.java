@@ -14,7 +14,7 @@ public class RedisUtil {
     private final RedisTemplate<String, String> redisBlackListTemplate;
 
     public void save(String key, String value) {
-        redisTemplate.opsForValue().set(key, value);
+        redisTemplate.opsForValue().set(key, value, 30, TimeUnit.MINUTES);
     }
 
     public void delete(String key) {
