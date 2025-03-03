@@ -212,8 +212,8 @@ public class AuthService {
         }
 
         // Redis에서 해당 사용자의 리프레시 토큰이 존재하는지 확인 (보안 강화)
-        String storeRefreshToekn = redisUtil.get(email);
-        if(storeRefreshToekn == null || !storeRefreshToekn.equals(refreshToken)){
+        String storeRefreshToken = redisUtil.get(email);
+        if(storeRefreshToken == null || !storeRefreshToken.equals(refreshToken)){
             throw new TokenException(INVALID_TOKEN);
         }
 
