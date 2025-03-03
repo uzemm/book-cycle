@@ -171,7 +171,6 @@ public class AuthService {
         return tokenDto;
     }
 
-    @Transactional
     public void logout(String accessToken) {
         // tokenProvider에서 email 정보 가져옴
         String email = tokenProvider.getAuthentication(accessToken).getName();
