@@ -27,7 +27,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 import static com.uzem.book_cycle.member.type.MemberErrorCode.*;
@@ -189,9 +188,8 @@ public class AuthService {
     @Transactional
     public TokenDTO reissueAccessToken(String refreshToken) {
          // 리프레시 토큰 검증
-        if (!tokenProvider.validateToken(refreshToken)) {
-            throw new TokenException(INVALID_TOKEN);
-        }
+        tokenProvider.validateToken(refreshToken);
+
         // 리프레시 토큰에서 클레임 추출
         Claims claims = tokenProvider.getClaimsFromValidToken(refreshToken);
         // 토큰의 타입 리프레시 토큰이 맞는지
@@ -203,13 +201,6 @@ public class AuthService {
         String email = claims.getSubject();
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
-
-        // 현재 시간과 비교하여 만료 여부 체크
-        Date expirationDate = claims.getExpiration();
-        long expirationTime = expirationDate.getTime();
-        if (System.currentTimeMillis() > expirationTime) {
-            throw new TokenException(EXPIRED_TOKEN);
-        }
 
         // Redis에서 해당 사용자의 리프레시 토큰이 존재하는지 확인 (보안 강화)
         String storeRefreshToken = redisUtil.get(email);
