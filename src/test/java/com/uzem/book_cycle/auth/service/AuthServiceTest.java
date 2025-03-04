@@ -14,13 +14,13 @@ import com.uzem.book_cycle.redis.RedisUtil;
 import com.uzem.book_cycle.security.token.TokenDTO;
 import com.uzem.book_cycle.security.token.TokenErrorCode;
 import com.uzem.book_cycle.security.token.TokenProvider;
-import jakarta.servlet.http.HttpServletRequest;
-import org.antlr.v4.runtime.Token;
+import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -29,7 +29,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Optional;
 
-import static com.uzem.book_cycle.member.type.MemberErrorCode.INCORRECT_ID_OR_PASSWORD;
 import static com.uzem.book_cycle.member.type.MemberStatus.ACTIVE;
 import static com.uzem.book_cycle.member.type.MemberStatus.PENDING;
 import static com.uzem.book_cycle.member.type.Role.USER;
@@ -39,7 +38,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
@@ -213,16 +211,94 @@ class AuthServiceTest {
 
     @Test
     @DisplayName("로그아웃 실패 - 유효하지 않은 토큰")
-    void fail_logout(){
+    void fail_logout_invalid(){
         //given
-        String invalid = "invalid";
+        String invalidToken = "invalidToken";
 
-        given(tokenProvider.getAuthentication(invalid)).willThrow(new TokenException(INVALID_TOKEN));
+        given(tokenProvider.getAuthentication(invalidToken)).willThrow(new TokenException(INVALID_TOKEN));
         //when
         //then
-        assertThrows(TokenException.class, () -> authService.logout(invalid));
+        assertThrows(TokenException.class, () -> authService.logout(invalidToken));
     }
 
+    @Test
+    @DisplayName("토큰 재발급 성공")
+    void success_reissueToken(){
+        //given
+        Member member = Member.builder().email("test@uzem.com").build();
+        String refreshToken = "refreshToken";
+        String email = "test@uzem.com";
+        String newAccessToken = "newAccessToken";
+
+        Claims claims = Mockito.mock(Claims.class);
+        given(claims.getSubject()).willReturn("test@uzem.com");
+        given(claims.get("isRefreshToken")).willReturn(true);
+
+        given(tokenProvider.validateToken(refreshToken)).willReturn(true);
+        given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
+        given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
+        given(redisUtil.get(email)).willReturn(refreshToken);
+        given(tokenProvider.reissueAccessToken(refreshToken)).willReturn(
+                TokenDTO.builder()
+                        .accessToken(newAccessToken)
+                        .build());
+        //when
+        TokenDTO result = authService.reissueAccessToken(refreshToken);
+
+        //then
+        verify(tokenProvider).validateToken(refreshToken);
+        verify(tokenProvider).getClaimsFromValidToken(refreshToken);
+        verify(memberRepository).findByEmail(email);
+        verify(redisUtil).get(email);
+        verify(tokenProvider).reissueAccessToken(refreshToken);
+    }
+
+    @Test
+    @DisplayName("토큰재발급 실패 - 리프레시타입이 아닌 경우")
+    void fail_reissueToken_not_refreshToken(){
+        //given
+        String refreshToken = "refreshToken";
+
+        Claims claims = Mockito.mock(Claims.class);
+        given(claims.getSubject()).willReturn("test@uzem.com");
+        given(claims.get("isRefreshToken")).willReturn(true);
+
+        given(tokenProvider.validateToken(refreshToken)).willReturn(true);
+        given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
+        given(claims.get("isRefreshToken")).willReturn(false);
+
+        //when
+        TokenException exception = assertThrows(TokenException.class,
+                () -> authService.reissueAccessToken(refreshToken));
+
+        //then
+        assertEquals(TokenErrorCode.NOT_A_REFRESH_TOKEN, exception.getTokenErrorCode());
+    }
+
+    @Test
+    @DisplayName("토큰 재발급 - 리프레시 토큰 불일치")
+    void fail_reissueToken_invalid(){
+        //given
+        Member member = Member.builder().email("test@uzem.com").build();
+        String refreshToken = "refreshToken";
+        String email = "test@uzem.com";
+
+        Claims claims = Mockito.mock(Claims.class);
+        given(claims.getSubject()).willReturn("test@uzem.com");
+        given(claims.get("isRefreshToken")).willReturn(true);
+
+        given(tokenProvider.validateToken(refreshToken)).willReturn(true);
+        given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
+        given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
+        given(redisUtil.get(email)).willReturn("invalid refreshToken");
+
+        //when
+        TokenException exception = assertThrows(TokenException.class,
+                () -> authService.reissueAccessToken(refreshToken));
+
+        //then
+        assertEquals(INVALID_TOKEN, exception.getTokenErrorCode());
+    }
 }
 
 

@@ -2,6 +2,7 @@ package com.uzem.book_cycle.auth.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uzem.book_cycle.auth.dto.LoginRequestDTO;
+import com.uzem.book_cycle.auth.dto.RefreshRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthService;
@@ -185,4 +186,30 @@ class AuthControllerTest {
 
         verify(authService).logout(eq(accessToken));
     }
+
+    @Test
+    @DisplayName("AccessToken 재발급 성공")
+    void success_reissueAccessToken() throws Exception {
+        //given
+        String refreshToken = "refreshToken";
+        RefreshRequestDTO request = RefreshRequestDTO.builder()
+                .refreshToken(refreshToken).build();
+
+        TokenDTO tokenDTO = TokenDTO.builder()
+                .accessToken("new_accessToken")
+                .refreshToken("refreshToken")
+                .build();
+
+        given(authService.reissueAccessToken(refreshToken)).willReturn(tokenDTO);
+
+        //when
+        //then
+        mockMvc.perform(post("/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("new_accessToken"))
+                .andExpect(jsonPath("$.refreshToken").value("refreshToken"));
+    }
+
 }
