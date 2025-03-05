@@ -44,4 +44,11 @@ public class EmailVerification {
     @Column(nullable = false)
     private boolean verified;
 
+    public void verified() {
+        this.verified = true;
+    }
+
+    public boolean isExpired() {
+        return LocalDateTime.now().isAfter(this.expiresAt);
+    }
 }
