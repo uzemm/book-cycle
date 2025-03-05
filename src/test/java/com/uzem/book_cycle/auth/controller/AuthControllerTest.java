@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uzem.book_cycle.auth.dto.LoginRequestDTO;
 import com.uzem.book_cycle.auth.dto.RefreshRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
+import com.uzem.book_cycle.auth.dto.SignUpResponseDTO;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthService;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
 import com.uzem.book_cycle.auth.email.service.EmailService;
-import com.uzem.book_cycle.member.dto.MemberDTO;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.security.CustomUserDetailsService;
 import com.uzem.book_cycle.security.token.TokenDTO;
@@ -25,12 +25,12 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+
 import static com.uzem.book_cycle.member.type.MemberStatus.ACTIVE;
 import static com.uzem.book_cycle.member.type.MemberStatus.PENDING;
-import static com.uzem.book_cycle.member.type.Role.USER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -70,40 +70,31 @@ class AuthControllerTest {
     @WithMockUser(username = "testuser", roles = {"USER"}) //가짜 사용자 추가
     void successSignUp() throws Exception {
         //given
-        MemberDTO memberDTO = MemberDTO.builder()
-                .id(1L)
-                .email("test@uzem.com")
-                .name("테스트 유저")
-                .phone("01012345678")
-                .password("12345678")
-                .address("서울시 강남구")
-                .role(USER)
-                .status(PENDING)
-                .rentalCnt(0)
-                .point(0L)
-                .refreshToken("")
-                .isDeleted(false)
-                .socialId(null)
-                .socialType(null)
-                .build();
-        given(repository.existsByEmail(anyString())).willReturn(false);
-        given(authService.signUp(any())).willReturn(memberDTO);
-
         SignUpRequestDTO requestDTO = SignUpRequestDTO.builder()
                 .email("test@uzem.com")
-                .password("12345678")
-                .phone("01012345678")
-                .name("테스트 유저")
-                .address("서울시 강남구")
+                .name("test")
+                .phone("123456789")
+                .password("password")
+                .address("address")
+                .build();
+
+        SignUpResponseDTO responseDTO = SignUpResponseDTO.builder()
+                .id(1L)
+                .email("test@uzem.com")
+                .status(PENDING)
+                .createdAt(LocalDateTime.now())
                 .build();
 
         //when
+        when(repository.existsByEmail(anyString())).thenReturn(false);
+        when(authService.signUp(any())).thenReturn(responseDTO);
+
         //then
         mockMvc.perform(post("/auth/signup")
                         .with(csrf()) //CSRF 토큰 추가
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(requestDTO)))//JSON 변환 후 요청
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("test@uzem.com"))
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.status").value("PENDING"));
@@ -114,18 +105,23 @@ class AuthControllerTest {
     @WithMockUser(username = "testuser", roles = {"USER"}) //가짜 사용자 추가
     void successVerifyCheck() throws Exception {
         //given
-        EmailVerificationRequestDTO request = EmailVerificationRequestDTO.builder()
+        EmailVerificationRequestDTO requestDTO = EmailVerificationRequestDTO.builder()
                 .email("test@uzem.com")
                 .verificationCode("123456")
                 .build();
+
+        EmailVerificationResponseDTO responseDTO = EmailVerificationResponseDTO.builder()
+                .email("test@uzem.com")
+                .status(ACTIVE)
+                .build();
         //when
         when(authService.verifyCheck("test@uzem.com", "123456"))
-                .thenReturn(new EmailVerificationResponseDTO("test@uzem.com", ACTIVE));
+                .thenReturn(responseDTO);
         //then
         mockMvc.perform(post("/auth/verify-check")
                         .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(requestDTO)))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("test@uzem.com"))
@@ -200,7 +196,7 @@ class AuthControllerTest {
                 .refreshToken("refreshToken")
                 .build();
 
-        given(authService.reissueAccessToken(refreshToken)).willReturn(tokenDTO);
+        when(tokenProvider.reissueAccessToken(refreshToken)).thenReturn(tokenDTO);
 
         //when
         //then

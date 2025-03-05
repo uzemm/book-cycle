@@ -1,13 +1,12 @@
 package com.uzem.book_cycle.auth.dto;
 
-import com.uzem.book_cycle.member.dto.MemberDTO;
+import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.type.MemberStatus;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -17,12 +16,12 @@ public class SignUpResponseDTO {
     private MemberStatus status;
     private LocalDateTime createdAt;
 
-    public static SignUpResponseDTO from(MemberDTO memberDto) {
+    public static SignUpResponseDTO from(Member member) {
         return SignUpResponseDTO.builder()
-                .id(memberDto.getId())
-                .email(memberDto.getEmail())
-                .status(memberDto.getStatus())
-                .createdAt(memberDto.getCreatedAt())
+                .id(member.getId())
+                .email(member.getEmail())
+                .status(member.getStatus())
+                .createdAt(member.getCreatedAt())
                 .build();
     }
 }

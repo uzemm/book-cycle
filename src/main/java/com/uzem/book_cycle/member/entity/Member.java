@@ -12,14 +12,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 @Entity
 public class Member extends BaseEntity {
@@ -51,6 +45,9 @@ public class Member extends BaseEntity {
 
     private Long point;
 
+    @Column(nullable = true)
+    private String refreshToken;
+
     @Column(nullable = false)
     private boolean isDeleted;
 
@@ -60,9 +57,7 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SocialType socialType;
 
-
-    public void encodePassword(PasswordEncoder passwordEncoder, String password) {
-        this.password = passwordEncoder.encode(password);
+    public void activateMember(){
+        this.status = MemberStatus.ACTIVE;
     }
-
 }

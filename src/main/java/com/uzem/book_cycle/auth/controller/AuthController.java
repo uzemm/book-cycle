@@ -5,10 +5,8 @@ import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthService;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
 import com.uzem.book_cycle.security.token.TokenDTO;
-import com.uzem.book_cycle.member.dto.MemberDTO;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,14 +29,12 @@ public class AuthController {
     private final TokenProvider tokenProvider;
 
     @PostMapping("/signup")
-    @Operation(summary = "회원가입")
-    public SignUpResponseDTO signUp(
-            @Parameter(description = "회원가입 정보 입력")
+    public ResponseEntity<SignUpResponseDTO> signUp(
             @RequestBody @Valid SignUpRequestDTO request) {
         //회원가입
-        MemberDTO memberDTO = authService.signUp(request);
+        SignUpResponseDTO response = authService.signUp(request);
 
-        return SignUpResponseDTO.from(memberDTO);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/verify-check")
