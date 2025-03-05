@@ -38,13 +38,6 @@ public class AuthController {
     }
 
     @PostMapping("/verify-check")
-    @Operation(summary = "인증번호 확인")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "이메일 인증 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "500", description = "서버 에러")
-    }
-    )
     public ResponseEntity<EmailVerificationResponseDTO> verifyEmail
             (@RequestBody @Valid EmailVerificationRequestDTO request) {
         EmailVerificationResponseDTO response = authService.verifyCheck(

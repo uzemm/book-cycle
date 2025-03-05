@@ -58,6 +58,7 @@ public class Member extends BaseEntity {
     private SocialType socialType;
 
     public void activateMember(){
+
         this.status = MemberStatus.ACTIVE;
     }
 }
