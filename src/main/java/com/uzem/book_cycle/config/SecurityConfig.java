@@ -36,7 +36,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
 
                 .addFilterBefore(corsFilter, UsernamePasswordAuthenticationFilter.class) // CORS 필터 추가
-                .addFilterBefore(new JwtFilter(tokenProvider, redisUtil), UsernamePasswordAuthenticationFilter.class) // JwtFilter 직접 등록
+                .addFilterBefore(new JwtFilter(tokenProvider, redisUtil),
+                        UsernamePasswordAuthenticationFilter.class) // JwtFilter 직접 등록
                 .exceptionHandling(exception -> {
                     exception.accessDeniedHandler(jwtAccessDeniedHandler);
                     exception.authenticationEntryPoint(jwtAuthenticationEntryPoint);
@@ -45,8 +46,11 @@ public class SecurityConfig {
                 .sessionManagement(sessionManagement ->
                         sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
+                .securityContext(securityContext
+                        -> securityContext.requireExplicitSave(false))
 
-                .authorizeHttpRequests(authorizeHttpRequests -> authorizeHttpRequests
+                .authorizeHttpRequests(authorizeHttpRequests
+                        -> authorizeHttpRequests
                         .requestMatchers("/api/v2/admin/**").hasRole("ADMIN") // ROLE_ 자동 추가됨
                         .requestMatchers("/auth/**").permitAll() // 로그인, 회원가입은 열어주기
                         .anyRequest().authenticated()
