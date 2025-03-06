@@ -1,18 +1,17 @@
 package com.uzem.book_cycle.security;
 
+import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+
+import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
 
 @Service
 @Transactional(readOnly = true)
@@ -22,22 +21,12 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final MemberRepository memberRepository;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        // 이메일을 이용하여 사용자 조회
-        return memberRepository.findByEmail(email)
-                .map(this::createUserDetails)
-                .orElseThrow(() -> new UsernameNotFoundException(email + " 사용자를 찾을 수 없습니다."));
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+
+        Member member = memberRepository.findByEmail(username)
+                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
+
+        return new CustomUserDetails(member);
     }
 
-    // DB에 회원이 존재한다면 UserDetails 객체로 만들어서 리턴
-    private UserDetails createUserDetails(Member member) {
-        GrantedAuthority grantedAuthority = new SimpleGrantedAuthority(
-                "ROLE_" + member.getStatus().toString());
-
-        return new User(
-                member.getEmail(), // 사용자 식별자로 이메일을 사용
-                member.getPassword(),
-                Collections.singleton(grantedAuthority) //권한 설정
-        );
-    }
 }
