@@ -13,9 +13,11 @@ public enum MemberErrorCode {
     EMAIL_ALREADY_VERIFIED("인증이 이미 완료되었습니다."),
     PHONE_ALREADY_IN_USE("이미 가입된 전화번호입니다."),
     INCORRECT_ID_OR_PASSWORD("아이디 또는 비밀번호가 올바르지 않습니다."),
+    INCORRECT_PASSWORD("현재 비밀번호가 올바르지 않습니다."),
+    SAME_AS_CURRENT_PASSWORD("현재 비밀번호와 새 비밀번호가 동일합니다."),
+    CONFIRM_PASSWORD_MISMATCH("비밀번호가 일치하지 않습니다."),
     MEMBER_NOT_FOUND("사용자를 찾을 수 없습니다."),
-    EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
-    UNAUTHORIZED("권한이 없습니다.")
+    EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다.")
     ;
 
     private String description;

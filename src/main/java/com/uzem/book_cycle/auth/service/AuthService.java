@@ -168,10 +168,8 @@ public class AuthService {
         //회원 조회
         Member member = memberRepository.findByEmail(loginRequestDTO.getEmail())
                 .orElseThrow(() -> new MemberException(INCORRECT_ID_OR_PASSWORD));
-        //회원 상태 조회
-        if(member.getStatus() == PENDING){
-            throw new MemberException(EMAIL_NOT_VERIFIED);
-        }
+
+        validationLogin(loginRequestDTO, member);
 
         //사용자 인증
         Authentication authentication = authenticationManager.authenticate(
@@ -192,6 +190,16 @@ public class AuthService {
         log.debug(" Redis에 Refresh Token 저장 완료: {}", loginRequestDTO.getEmail());
 
         return tokenDto;
+    }
+
+    private void validationLogin(LoginRequestDTO loginRequestDTO, Member member) {
+        if(!passwordEncoder.matches(loginRequestDTO.getPassword(), member.getPassword())){
+            throw new MemberException(INCORRECT_PASSWORD);
+        }
+        //회원 상태 조회
+        if(member.getStatus() == PENDING){
+            throw new MemberException(EMAIL_NOT_VERIFIED);
+        }
     }
 
     public void logout(String accessToken) {
