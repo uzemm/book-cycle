@@ -20,9 +20,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
 
-    public static final String AUTHORIZATION_HEADER = "Authorization";
-    public static final String BEARER_PREFIX = "Bearer ";
-    private static final String BLACKLIST_PREFIX = "BLACKLIST:";
+    private static final String BLACKLIST_PREFIX = "blacklist:";
 
     private final TokenProvider tokenProvider;
     private final RedisUtil redisUtil;
