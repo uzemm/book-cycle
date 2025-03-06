@@ -309,19 +309,19 @@ class AuthServiceTest {
     void success_logout(){
         //given
         String accessToken = "accessToken";
-        String email = "test@uzem.com";
+        Long memberId = 1L;
         long expiration = 3600L;
 
         given(tokenProvider.getAuthentication(accessToken))
                 .willReturn(new UsernamePasswordAuthenticationToken(
-                        email, null));
+                        memberId, null));
         given(tokenProvider.getExpiration(accessToken)).willReturn(expiration);
 
         //when
         authService.logout(accessToken);
 
         //then
-        verify(redisUtil, times(1)).delete(email);
+        verify(redisUtil, times(1)).delete("refreshToken:" + memberId);
         verify(redisUtil, times(1)).setBlackList(accessToken, "access_token", expiration);
 
     }
@@ -342,19 +342,19 @@ class AuthServiceTest {
     @DisplayName("토큰 재발급 성공")
     void success_reissueToken(){
         //given
-        Member member = Member.builder().email("test@uzem.com").build();
+        Member member = Member.builder().id(1L).email("test@uzem.com").build();
         String refreshToken = "refreshToken";
-        String email = "test@uzem.com";
         String newAccessToken = "newAccessToken";
+        Long memberId = 1L;
 
         Claims claims = Mockito.mock(Claims.class);
-        given(claims.getSubject()).willReturn("test@uzem.com");
+        given(claims.getSubject()).willReturn(String.valueOf(1L));
         given(claims.get("isRefreshToken")).willReturn(true);
 
         given(tokenProvider.validateToken(refreshToken)).willReturn(true);
         given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
-        given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-        given(redisUtil.get(email)).willReturn(refreshToken);
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(redisUtil.get(memberId)).willReturn(refreshToken);
         given(tokenProvider.reissueAccessToken(refreshToken)).willReturn(
                 TokenDTO.builder()
                         .accessToken(newAccessToken)
@@ -363,10 +363,13 @@ class AuthServiceTest {
         TokenDTO result = authService.reissueAccessToken(refreshToken);
 
         //then
+        assertNotNull(result);
+        assertThat(result.getAccessToken()).isEqualTo(newAccessToken);
+
         verify(tokenProvider).validateToken(refreshToken);
         verify(tokenProvider).getClaimsFromValidToken(refreshToken);
-        verify(memberRepository).findByEmail(email);
-        verify(redisUtil).get(email);
+        verify(memberRepository).findById(memberId);
+        verify(redisUtil).get(memberId);
         verify(tokenProvider).reissueAccessToken(refreshToken);
     }
 
@@ -399,6 +402,7 @@ class AuthServiceTest {
         Member member = Member.builder().email("test@uzem.com").build();
         String refreshToken = "refreshToken";
         String email = "test@uzem.com";
+        Long memberId = 1L;
 
         Claims claims = Mockito.mock(Claims.class);
         given(claims.getSubject()).willReturn("test@uzem.com");
@@ -407,7 +411,7 @@ class AuthServiceTest {
         given(tokenProvider.validateToken(refreshToken)).willReturn(true);
         given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
         given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-        given(redisUtil.get(email)).willReturn("invalid refreshToken");
+        given(redisUtil.get(memberId)).willReturn("invalid refreshToken");
 
         //when
         TokenException exception = assertThrows(TokenException.class,

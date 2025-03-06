@@ -1,7 +1,12 @@
 package com.uzem.book_cycle.security.token;
 
+import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.TokenException;
+import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.member.repository.MemberRepository;
+import com.uzem.book_cycle.member.type.MemberErrorCode;
 import com.uzem.book_cycle.redis.RedisUtil;
+import com.uzem.book_cycle.security.CustomUserDetails;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -12,8 +17,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -33,15 +37,19 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     public static final String BEARER_PREFIX = "Bearer ";
 
     private static final long ACCESS_TOKEN_EXPIRE_TIME = Duration.ofMinutes(30).toMillis(); // 30분
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = Duration.ofDays(14).toMillis(); // 2주
+    private static final long REFRESH_TOKEN_EXPIRE_TIME = Duration.ofMinutes(14).toMillis(); // 2주
 
     private final Key key;
     private final RedisUtil redisUtil;
+    private final UserDetailsService userDetailsService;
+    private final MemberRepository memberRepository;
 
-    public TokenProvider(@Value("${custom.jwt.secret}") String secretKey, RedisUtil redisUtil) {
+    public TokenProvider(@Value("${custom.jwt.secret}") String secretKey, RedisUtil redisUtil, UserDetailsService userDetailsService, MemberRepository memberRepository) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.redisUtil = redisUtil;
+        this.userDetailsService = userDetailsService;
+        this.memberRepository = memberRepository;
     }
 
     public TokenDTO generateTokenDto(Authentication authentication) {
@@ -50,8 +58,8 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(","));
 
-        String accessToken = generateAccessToken(authentication.getName(), authorities);
-        String refreshToken = generateRefreshToken(authentication.getName(), authorities);
+        String accessToken = generateAccessToken(Long.valueOf(authentication.getName()), authorities);
+        String refreshToken = generateRefreshToken(Long.valueOf(authentication.getName()), authorities);
 
         long now = (new Date()).getTime();
 
@@ -79,10 +87,10 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
             throw new TokenException(NOT_A_REFRESH_TOKEN);
         }
 
-        String email = claims.getSubject();
+        Long memberId = Long.valueOf(claims.getSubject());
         String authorities = claims.get(AUTHORITIES_KEY).toString();
 
-        String newAccessToken = generateAccessToken(email, authorities);
+        String newAccessToken = generateAccessToken(memberId, authorities);
         long accessTokenExpiresIn = System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME;
 
         return TokenDTO.builder()
@@ -96,11 +104,11 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     /**
      * AccessToken 생성
      */
-    private String generateAccessToken(String email, String authorities) {
+    private String generateAccessToken(Long memberId, String authorities) {
         long now = (new Date()).getTime();
         Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(memberId.toString())
                 .claim(AUTHORITIES_KEY, authorities)
                 .setExpiration(accessTokenExpiresIn)
                 .signWith(key, SignatureAlgorithm.HS512)
@@ -110,10 +118,10 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     /**
      * RefreshToken 생성
      */
-    private String generateRefreshToken(String email, String authorities) {
+    private String generateRefreshToken(Long memberId, String authorities) {
         long now = (new Date()).getTime();
         return Jwts.builder()
-                .setSubject(email)
+                .setSubject(memberId.toString())
                 .claim(AUTHORITIES_KEY, authorities)
                 .setExpiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
                 .claim("isRefreshToken", true) // refreshToken 임을 나타내는 클레임 추가
@@ -127,6 +135,8 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     public Authentication getAuthentication(String accessToken) {
         // 토큰 복호화
         Claims claims = parseClaims(accessToken);
+        Long memberId = Long.valueOf(claims.getSubject());
+        log.info("Extracted userEmail from token: {}", memberId);
 
         if (claims.get(AUTHORITIES_KEY) == null) {
             throw new RuntimeException("권한 정보가 없는 토큰입니다.");
@@ -138,10 +148,14 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-        // UserDetails 객체를 만들어서 Authentication 리턴
-        UserDetails principal = new User(claims.getSubject(), "", authorities);
+        // UserDetailsService를 통해 DB에서 조회
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        return new UsernamePasswordAuthenticationToken(principal, "", authorities);
+        // ✅ CustomUserDetails를 사용하도록 변경
+        CustomUserDetails userDetails = new CustomUserDetails(member);
+
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
     /**
