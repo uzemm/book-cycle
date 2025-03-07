@@ -38,6 +38,7 @@ import static com.uzem.book_cycle.member.type.MemberErrorCode.*;
 import static com.uzem.book_cycle.member.type.MemberStatus.ACTIVE;
 import static com.uzem.book_cycle.member.type.MemberStatus.PENDING;
 import static com.uzem.book_cycle.member.type.Role.USER;
+import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 import static com.uzem.book_cycle.security.token.TokenErrorCode.INVALID_TOKEN;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -64,13 +65,16 @@ class AuthServiceTest {
     private PasswordEncoder passwordEncoder;
 
     @Mock
-    RedisUtil redisUtil;
+    private RedisUtil redisUtil;
 
     @Mock
     private AuthenticationManager authenticationManager;
 
     @Mock
-    TokenProvider tokenProvider;
+    private TokenProvider tokenProvider;
+
+    @Mock
+    private Claims claims;
 
     @InjectMocks
     private AuthService authService;
@@ -347,14 +351,13 @@ class AuthServiceTest {
         String newAccessToken = "newAccessToken";
         Long memberId = 1L;
 
-        Claims claims = Mockito.mock(Claims.class);
         given(claims.getSubject()).willReturn(String.valueOf(1L));
         given(claims.get("isRefreshToken")).willReturn(true);
 
         given(tokenProvider.validateToken(refreshToken)).willReturn(true);
         given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(redisUtil.get(memberId)).willReturn(refreshToken);
+        given(redisUtil.get("refreshToken:" + memberId)).willReturn(refreshToken);
         given(tokenProvider.reissueAccessToken(refreshToken)).willReturn(
                 TokenDTO.builder()
                         .accessToken(newAccessToken)
@@ -363,13 +366,12 @@ class AuthServiceTest {
         TokenDTO result = authService.reissueAccessToken(refreshToken);
 
         //then
-        assertNotNull(result);
+        assertThat(result).isNotNull();
         assertThat(result.getAccessToken()).isEqualTo(newAccessToken);
 
         verify(tokenProvider).validateToken(refreshToken);
         verify(tokenProvider).getClaimsFromValidToken(refreshToken);
-        verify(memberRepository).findById(memberId);
-        verify(redisUtil).get(memberId);
+        verify(redisUtil).get("refreshToken:" + memberId);
         verify(tokenProvider).reissueAccessToken(refreshToken);
     }
 
@@ -379,8 +381,7 @@ class AuthServiceTest {
         //given
         String refreshToken = "refreshToken";
 
-        Claims claims = Mockito.mock(Claims.class);
-        given(claims.getSubject()).willReturn("test@uzem.com");
+        given(claims.getSubject()).willReturn(String.valueOf(1L));
         given(claims.get("isRefreshToken")).willReturn(true);
 
         given(tokenProvider.validateToken(refreshToken)).willReturn(true);
@@ -392,26 +393,21 @@ class AuthServiceTest {
                 () -> authService.reissueAccessToken(refreshToken));
 
         //then
-        assertEquals(TokenErrorCode.NOT_A_REFRESH_TOKEN, exception.getTokenErrorCode());
+        assertEquals(NOT_A_REFRESH_TOKEN, exception.getTokenErrorCode());
     }
 
     @Test
     @DisplayName("토큰 재발급 - 리프레시 토큰 불일치")
     void fail_reissueToken_invalid(){
         //given
-        Member member = Member.builder().email("test@uzem.com").build();
         String refreshToken = "refreshToken";
-        String email = "test@uzem.com";
-        Long memberId = 1L;
 
         Claims claims = Mockito.mock(Claims.class);
-        given(claims.getSubject()).willReturn("test@uzem.com");
+        given(claims.getSubject()).willReturn(String.valueOf(1L));
         given(claims.get("isRefreshToken")).willReturn(true);
 
-        given(tokenProvider.validateToken(refreshToken)).willReturn(true);
-        given(tokenProvider.getClaimsFromValidToken(refreshToken)).willReturn(claims);
-        given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-        given(redisUtil.get(memberId)).willReturn("invalid refreshToken");
+        given(tokenProvider.validateToken(refreshToken)).willThrow(
+                new TokenException(INVALID_TOKEN));
 
         //when
         TokenException exception = assertThrows(TokenException.class,

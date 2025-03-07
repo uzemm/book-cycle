@@ -73,8 +73,8 @@ class AuthControllerTest {
         SignUpRequestDTO requestDTO = SignUpRequestDTO.builder()
                 .email("test@uzem.com")
                 .name("test")
-                .phone("123456789")
-                .password("password")
+                .phone("12345678910")
+                .password("password@1")
                 .address("address")
                 .build();
 
@@ -193,10 +193,9 @@ class AuthControllerTest {
 
         TokenDTO tokenDTO = TokenDTO.builder()
                 .accessToken("new_accessToken")
-                .refreshToken("refreshToken")
                 .build();
 
-        when(tokenProvider.reissueAccessToken(refreshToken)).thenReturn(tokenDTO);
+        when(authService.reissueAccessToken(refreshToken)).thenReturn(tokenDTO);
 
         //when
         //then
@@ -204,8 +203,7 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").value("new_accessToken"))
-                .andExpect(jsonPath("$.refreshToken").value("refreshToken"));
+                .andExpect(jsonPath("$.accessToken").value("new_accessToken"));
     }
 
 }
