@@ -14,14 +14,14 @@ public class RedisUtil {
     private final RedisTemplate<String, String> redisBlackListTemplate;
 
     public void save(String key, String value) {
-        redisTemplate.opsForValue().set("refreshToken" + key, value, 30, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(key, value, 30, TimeUnit.MINUTES);
     }
 
     public void delete(String key) {
-        redisTemplate.delete("refreshToken" + key);
+        redisTemplate.delete(key);
     }
 
-    public String get(Long key) {
+        public String get(String key) {
         return redisTemplate.opsForValue().get(key);
     }
 
