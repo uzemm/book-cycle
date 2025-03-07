@@ -17,7 +17,8 @@ public enum MemberErrorCode {
     SAME_AS_CURRENT_PASSWORD("현재 비밀번호와 새 비밀번호가 동일합니다."),
     CONFIRM_PASSWORD_MISMATCH("비밀번호가 일치하지 않습니다."),
     MEMBER_NOT_FOUND("사용자를 찾을 수 없습니다."),
-    EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다.")
+    EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
+    DUPLICATE_EMAIL("이미 사용 중인 이메일입니다. 다른 이메일을 입력하세요.")
     ;
 
     private String description;

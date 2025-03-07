@@ -1,8 +1,6 @@
 package com.uzem.book_cycle.member.controller;
 
-import com.uzem.book_cycle.member.dto.MemberResponseDTO;
-import com.uzem.book_cycle.member.dto.MemberUpdatePasswordRequestDTO;
-import com.uzem.book_cycle.member.dto.MemberUpdateRequestDTO;
+import com.uzem.book_cycle.member.dto.*;
 import com.uzem.book_cycle.member.service.MemberService;
 import com.uzem.book_cycle.security.CustomUserDetails;
 import com.uzem.book_cycle.security.token.TokenProvider;
@@ -18,14 +16,14 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/members")
+@RequestMapping("/members/me")
 public class MemberController {
 
     private final MemberService memberService;
     private final TokenProvider tokenProvider;
 
 
-    @GetMapping("/me")
+    @GetMapping()
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberResponseDTO> getMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails) {
@@ -33,11 +31,11 @@ public class MemberController {
         return ResponseEntity.ok(memberService.getMyInfo(userDetails.getId()));
     }
 
-    @PatchMapping("/me")
+    @PatchMapping()
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberResponseDTO> updateMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody @Valid MemberUpdateRequestDTO request) {
+            @RequestBody @Valid UpdateInfoRequestDTO request) {
 
         Long memberId = userDetails.getId();
         MemberResponseDTO updateMyInfo =
@@ -46,12 +44,12 @@ public class MemberController {
         return ResponseEntity.ok(updateMyInfo);
     }
 
-    @PatchMapping("/me/password")
+    @PatchMapping("/password")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> updateMyPassword(
             HttpServletRequest request,
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody@Valid MemberUpdatePasswordRequestDTO requestDTO){
+            @RequestBody@Valid UpdatePasswordRequestDTO requestDTO){
 
         Long memberId = userDetails.getId();
         String accessToken = tokenProvider.resolveToken(request);
@@ -59,5 +57,28 @@ public class MemberController {
         memberService.updatePassword(memberId, requestDTO, accessToken);
 
         return ResponseEntity.ok("비밀번호 변경 성공");
+    }
+
+    @PostMapping("/email")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> updateMyEmail(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody@Valid UpdateEmailRequestDTO requestDTO){
+
+        Long memberId = userDetails.getId();
+        memberService.updateEmail(memberId, requestDTO);
+
+        return ResponseEntity.ok("이메일 변경 요청 성공");
+    }
+
+    @PatchMapping("/email/check")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MemberResponseDTO> updateMyEmailCheck(
+            @RequestBody@Valid UpdateEmailVerifyRequestDTO requestDTO) {
+
+        MemberResponseDTO memberResponseDTO = memberService.UpdateEmailCheck(
+                requestDTO.getNewEmail(), requestDTO.getVerificationCode());
+
+        return ResponseEntity.ok(memberResponseDTO);
     }
 }
