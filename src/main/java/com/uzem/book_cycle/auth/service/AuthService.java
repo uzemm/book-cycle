@@ -25,6 +25,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -194,7 +195,7 @@ public class AuthService {
 
     private void validationLogin(LoginRequestDTO loginRequestDTO, Member member) {
         if(!passwordEncoder.matches(loginRequestDTO.getPassword(), member.getPassword())){
-            throw new MemberException(INCORRECT_PASSWORD);
+            throw new MemberException(INCORRECT_ID_OR_PASSWORD);
         }
         //회원 상태 조회
         if(member.getStatus() == PENDING){
@@ -231,16 +232,29 @@ public class AuthService {
 
         // DB에서 사용자 정보 조회 (추가 검증)
         Long memberId = Long.valueOf(claims.getSubject());
-        Member member = memberRepository.findById(memberId)
+        memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
 
         // Redis에서 해당 사용자의 리프레시 토큰이 존재하는지 확인 (보안 강화)
-        String storeRefreshToken = redisUtil.get(memberId);
+        String storeRefreshToken = redisUtil.get("refreshToken:" + memberId);
+        log.debug("🔍 Redis에서 가져온 Refresh Token: {}", storeRefreshToken);
+
         if(storeRefreshToken == null || !storeRefreshToken.equals(refreshToken)){
             throw new TokenException(INVALID_TOKEN);
         }
 
-        return tokenProvider.reissueAccessToken(refreshToken);
+        //새로운 엑세스 토큰 발급
+        TokenDTO tokenDTO = tokenProvider.reissueAccessToken(refreshToken);
+
+        // 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+
+        // 새로운 엑세스 토큰으로 인증 정보 생성 및 설정
+        Authentication authentication = tokenProvider.getAuthentication(tokenDTO.getAccessToken());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+
+        return tokenDTO;
     }
 
 }
