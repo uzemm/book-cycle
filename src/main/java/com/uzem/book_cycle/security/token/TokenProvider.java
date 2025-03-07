@@ -93,12 +93,7 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         String newAccessToken = generateAccessToken(memberId, authorities);
         long accessTokenExpiresIn = System.currentTimeMillis() + ACCESS_TOKEN_EXPIRE_TIME;
 
-        return TokenDTO.builder()
-                .grantType(BEARER_PREFIX)
-                .accessToken(newAccessToken)
-                .accessTokenExpiresIn(accessTokenExpiresIn)
-                .refreshToken(refreshToken)
-                .build();
+        return TokenDTO.create(newAccessToken, accessTokenExpiresIn);
     }
 
     /**
