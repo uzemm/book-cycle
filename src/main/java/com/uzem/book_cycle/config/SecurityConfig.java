@@ -53,6 +53,7 @@ public class SecurityConfig {
                         -> authorizeHttpRequests
                         .requestMatchers("/api/v2/admin/**").hasRole("ADMIN") // ROLE_ 자동 추가됨
                         .requestMatchers("/auth/**").permitAll() // 로그인, 회원가입은 열어주기
+                        .requestMatchers("/books/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
