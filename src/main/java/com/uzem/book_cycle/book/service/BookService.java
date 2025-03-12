@@ -3,11 +3,14 @@ package com.uzem.book_cycle.book.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.uzem.book_cycle.book.dto.BookDTO;
 import com.uzem.book_cycle.book.dto.BookResponseDTO;
+import com.uzem.book_cycle.exception.BookException;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+
+import static com.uzem.book_cycle.book.type.BookErrorCode.NAVER_API_ERROR;
 
 @Service
 public class BookService {
@@ -18,7 +21,7 @@ public class BookService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
-    public List<BookDTO> searchBook(String query) {
+    public List<BookDTO> searchBook(String query) throws BookException {
         try{
             String apiUrl = "https://openapi.naver.com/v1/search/book.json?query=" + query  + "&display=10&sort=sim";
 
@@ -33,10 +36,11 @@ public class BookService {
                 // JSON을 BookResponseDTO 객체로 변환
                 BookResponseDTO bookResponseDTO = objectMapper.readValue(response.getBody(), BookResponseDTO.class);
                 return bookResponseDTO.getItems();
+            } else {
+                throw new BookException(NAVER_API_ERROR);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new BookException(NAVER_API_ERROR);
         }
-        return List.of();
     }
 }
