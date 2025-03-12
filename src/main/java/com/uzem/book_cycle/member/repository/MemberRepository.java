@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmail(String email); //이메일로 회원 조회
+    Optional<Member> findById(Long memberId); // id로 회원 조회
     boolean existsByEmail(String email); //이메일 중복 체크
     boolean existsByPhone(String phone); //전화번호 중복 체크
 }
