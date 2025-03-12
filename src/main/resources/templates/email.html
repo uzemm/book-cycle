@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="container" style="margin:100px; font-size:15px; font-family:Arial, sans-serif;">
+    <h2 style="font-size:24px;">책이음 이메일 인증</h2>
+    <p>안녕하세요! 이메일 인증을 완료하려면 아래 코드를 입력해주세요.</p>
+    <p class="code">인증 코드:
+        <strong style="font-size: 20px; font-weight: bold;" th:text="${verificationCode}"></strong></p>
+</div>
+</body>
+</html>
