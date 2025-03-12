@@ -1,11 +1,16 @@
 package com.uzem.book_cycle.auth.controller;
 
-import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
-import com.uzem.book_cycle.auth.dto.SignUpResponseDTO;
+import com.uzem.book_cycle.auth.dto.*;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthService;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
+import com.uzem.book_cycle.security.token.TokenDTO;
+import com.uzem.book_cycle.security.token.TokenProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenProvider tokenProvider;
 
     @PostMapping("/signup")
     public ResponseEntity<SignUpResponseDTO> signUp(
@@ -40,4 +46,27 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/login")
+    public LoginResponseDTO login(@RequestBody@Valid LoginRequestDTO request) {
+        TokenDTO tokenDTO = authService.login(request);
+
+        return LoginResponseDTO.create(tokenDTO);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String accessToken = tokenProvider.resolveToken(request);
+
+        authService.logout(accessToken);
+
+        return ResponseEntity.ok("로그아웃 성공");
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenDTO> reissueAccessToken(@RequestBody @Valid RefreshRequestDTO request) {
+
+        TokenDTO tokenDTO = authService.reissueAccessToken(request.getRefreshToken());
+
+        return ResponseEntity.ok(tokenDTO);
+    }
 }

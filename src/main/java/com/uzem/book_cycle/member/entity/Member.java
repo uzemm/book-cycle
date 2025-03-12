@@ -10,6 +10,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -57,6 +58,7 @@ public class Member extends BaseEntity {
     private SocialType socialType;
 
     public void activateMember(){
+
         this.status = MemberStatus.ACTIVE;
     }
 }

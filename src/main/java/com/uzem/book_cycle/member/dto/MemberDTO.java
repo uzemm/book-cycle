@@ -31,6 +31,7 @@ public class MemberDTO {
     private SocialType socialType;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private LocalDateTime refreshTokenExpiration;
 
     public static MemberDTO fromEntity(Member member) {
         return MemberDTO.builder()
@@ -44,12 +45,12 @@ public class MemberDTO {
                 .status(member.getStatus())
                 .rentalCnt(member.getRentalCnt())
                 .point(member.getPoint())
-                .refreshToken(member.getRefreshToken())
                 .isDeleted(false)
                 .socialId(member.getSocialId())
                 .socialType(member.getSocialType())
                 .createdAt(member.getCreatedAt())
                 .updatedAt(member.getUpdatedAt())
+                .refreshTokenExpiration(LocalDateTime.now())
                 .build();
     }
 }
