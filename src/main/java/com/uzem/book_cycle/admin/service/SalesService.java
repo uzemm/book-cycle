@@ -10,6 +10,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 import static com.uzem.book_cycle.admin.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
 
 @Service
@@ -44,5 +46,9 @@ public class SalesService {
                 .orElseThrow(() -> new SalesException(SALES_BOOK_NOT_FOUND));
 
         salesBook.delete();
+    }
+
+    public List<SalesBook> searchSalesBook(String keyword) {
+        return salesBookRepository.searchByKeyword(keyword);
     }
 }
