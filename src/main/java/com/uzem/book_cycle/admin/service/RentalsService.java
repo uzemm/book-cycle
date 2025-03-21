@@ -10,6 +10,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 import static com.uzem.book_cycle.admin.type.RentalsErrorCode.RENTALS_BOOK_NOT_FOUND;
 
 @Service
@@ -43,5 +45,9 @@ public class RentalsService {
         RentalsBook rentalsBook = rentalsRepository.findByIdAndIsDeletedFalse(rentalId).orElseThrow(
                 () -> new RentalsException(RENTALS_BOOK_NOT_FOUND));
         rentalsBook.delete();
+    }
+
+    public List<RentalsBook> searchRentalsBook(String keyword) {
+        return rentalsRepository.searchByKeyword(keyword);
     }
 }
