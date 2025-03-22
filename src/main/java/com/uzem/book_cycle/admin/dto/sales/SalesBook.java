@@ -59,6 +59,19 @@ public class SalesBook extends BaseEntity {
     @Column(updatable = false)
     private LocalDateTime soldAt;
 
+    public static SalesBook from(SalesRequestDTO request) {
+        return SalesBook.builder()
+                .title(request.getTitle())
+                .author(request.getAuthor())
+                .publisher(request.getPublisher())
+                .isbn(request.getIsbn())
+                .description(request.getDescription())
+                .image(request.getImage())
+                .pubdate(request.getPubdate())
+                .link(request.getLink())
+                .price(request.getPrice())
+                .build();
+    }
 
     public void updateSalesBook(UpdateSalesRequestDTO update){
         updateCommonBookFields(update);

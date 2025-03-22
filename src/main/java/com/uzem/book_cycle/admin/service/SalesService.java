@@ -21,7 +21,7 @@ public class SalesService {
     private final SalesRepository salesBookRepository;
 
     public SalesBook createSalesBook(SalesRequestDTO salesRequestDTO) {
-        SalesBook book = salesRequestDTO.toSalesBook();
+        SalesBook book = SalesBook.from(salesRequestDTO);
         return salesBookRepository.save(book);
     }
 

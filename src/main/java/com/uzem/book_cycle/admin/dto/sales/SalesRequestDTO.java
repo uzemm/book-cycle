@@ -27,23 +27,4 @@ public class SalesRequestDTO {
     private int price;
     @NotNull
     private BookQuality bookQuality;
-
-    public SalesBook toSalesBook() {
-        return SalesBook.builder()
-                .title(this.getTitle())
-                .author(this.getAuthor())
-                .publisher(this.getPublisher())
-                .isbn(this.getIsbn())
-                .image(this.getImage())
-                .link(this.getLink())
-                .price(this.getPrice())
-                .description(this.getDescription())
-                .salesStatus(AVAILABLE)
-                .bookQuality(this.getBookQuality())
-                .pubdate(this.getPubdate())
-                .soldAt(null)
-                .isDeleted(false)
-                .isPublic(false)
-                .build();
-    }
 }

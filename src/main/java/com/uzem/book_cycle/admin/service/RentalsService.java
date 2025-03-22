@@ -21,7 +21,7 @@ public class RentalsService {
     private final RentalsRepository rentalsRepository;
 
     public RentalsBook createRentalsBook(RentalsRequestDTO rentalsRequestDTO) {
-        RentalsBook book = rentalsRequestDTO.toRentalsBook();
+        RentalsBook book = RentalsBook.from(rentalsRequestDTO);
         return rentalsRepository.save(book);
     }
 

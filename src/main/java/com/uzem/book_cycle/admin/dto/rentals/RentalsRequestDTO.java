@@ -28,22 +28,4 @@ public class RentalsRequestDTO {
     @NotNull
     @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
     private int depositFee;
-
-    public RentalsBook toRentalsBook() {
-        return RentalsBook.builder()
-                .title(this.getTitle())
-                .author(this.getAuthor())
-                .publisher(this.getPublisher())
-                .isbn(this.getIsbn())
-                .image(this.getImage())
-                .link(this.getLink())
-                .pubdate(this.getPubdate())
-                .description(this.getDescription())
-                .depositFee(this.getDepositFee())
-                .rentalsStatus(AVAILABLE)
-                .isDeleted(false)
-                .isPublic(false)
-                .build();
-    }
-
 }

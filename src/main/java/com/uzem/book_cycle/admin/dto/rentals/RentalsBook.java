@@ -55,6 +55,19 @@ public class RentalsBook extends BaseEntity {
     @Column(nullable = false)
     private boolean isPublic;
 
+    public static RentalsBook from(RentalsRequestDTO request) {
+        return RentalsBook.builder()
+                .title(request.getTitle())
+                .author(request.getAuthor())
+                .publisher(request.getPublisher())
+                .isbn(request.getIsbn())
+                .description(request.getDescription())
+                .image(request.getImage())
+                .pubdate(request.getPubdate())
+                .link(request.getLink())
+                .depositFee(request.getDepositFee())
+                .build();
+    }
 
     public void updateRentalsBook(UpdateRentalsRequestDTO update){
         updateCommonBookFields(update);
