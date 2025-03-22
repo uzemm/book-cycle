@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.book.type;
+package com.uzem.book_cycle.naver.type;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

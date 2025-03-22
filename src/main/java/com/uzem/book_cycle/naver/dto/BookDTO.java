@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.book.dto;
+package com.uzem.book_cycle.naver.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;

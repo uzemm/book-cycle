@@ -1,8 +1,8 @@
-package com.uzem.book_cycle.book.service;
+package com.uzem.book_cycle.naver.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.uzem.book_cycle.book.dto.BookDTO;
-import com.uzem.book_cycle.book.dto.BookResponseDTO;
+import com.uzem.book_cycle.naver.dto.BookDTO;
+import com.uzem.book_cycle.naver.dto.BookResponseDTO;
 import com.uzem.book_cycle.exception.BookException;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -10,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-import static com.uzem.book_cycle.book.type.BookErrorCode.NAVER_API_ERROR;
+import static com.uzem.book_cycle.naver.type.BookErrorCode.NAVER_API_ERROR;
 
 @Service
 public class BookService {

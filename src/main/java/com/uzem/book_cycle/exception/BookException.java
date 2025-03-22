@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.exception;
 
-import com.uzem.book_cycle.book.type.BookErrorCode;
+import com.uzem.book_cycle.naver.type.BookErrorCode;
 import lombok.*;
 
 @Getter

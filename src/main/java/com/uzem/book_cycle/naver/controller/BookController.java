@@ -1,7 +1,7 @@
-package com.uzem.book_cycle.book.controller;
+package com.uzem.book_cycle.naver.controller;
 
-import com.uzem.book_cycle.book.dto.BookDTO;
-import com.uzem.book_cycle.book.service.BookService;
+import com.uzem.book_cycle.naver.dto.BookDTO;
+import com.uzem.book_cycle.naver.service.BookService;
 import com.uzem.book_cycle.exception.BookException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.uzem.book_cycle.book.type.BookErrorCode.EMPTY_SEARCH_QUERY;
+import static com.uzem.book_cycle.naver.type.BookErrorCode.EMPTY_SEARCH_QUERY;
 
 @Controller
 @RequiredArgsConstructor
