@@ -2,6 +2,7 @@ package com.uzem.book_cycle.admin.dto.rentals;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
 import com.uzem.book_cycle.admin.type.RentalsStatus;
+import com.uzem.book_cycle.book.dto.RentalsPreviewDTO;
 import com.uzem.book_cycle.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +10,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -53,6 +55,7 @@ public class RentalsBook extends BaseEntity {
     @Column(nullable = false)
     private boolean isPublic;
 
+
     public void updateRentalsBook(UpdateRentalsRequestDTO update){
         updateCommonBookFields(update);
         this.depositFee = update.getDepositFee();
@@ -75,5 +78,15 @@ public class RentalsBook extends BaseEntity {
 
     public void delete(){
         this.isDeleted = true;
+    }
+
+    public RentalsPreviewDTO toSalesPreviewDTO(){
+        return RentalsPreviewDTO.builder()
+                .title(this.title)
+                .author(this.author)
+                .image(this.image)
+                .depositFee(this.depositFee)
+                .status(this.rentalsStatus)
+                .build();
     }
 }

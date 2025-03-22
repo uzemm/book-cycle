@@ -3,6 +3,7 @@ package com.uzem.book_cycle.admin.dto.sales;
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
 import com.uzem.book_cycle.admin.type.BookQuality;
 import com.uzem.book_cycle.admin.type.SalesStatus;
+import com.uzem.book_cycle.book.dto.SalesPreviewDTO;
 import com.uzem.book_cycle.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -58,6 +59,7 @@ public class SalesBook extends BaseEntity {
     @Column(updatable = false)
     private LocalDateTime soldAt;
 
+
     public void updateSalesBook(UpdateSalesRequestDTO update){
         updateCommonBookFields(update);
         this.price = update.getPrice();
@@ -77,5 +79,15 @@ public class SalesBook extends BaseEntity {
 
     public void delete(){
         this.isDeleted = true;
+    }
+
+    public SalesPreviewDTO toPreviewDTO() {
+        return SalesPreviewDTO.builder()
+                .title(this.title)
+                .author(this.author)
+                .image(this.image)
+                .price(this.price)
+                .status(this.salesStatus)
+                .build();
     }
 }

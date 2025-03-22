@@ -1,11 +1,13 @@
 package com.uzem.book_cycle.book.controller;
 
-import com.uzem.book_cycle.admin.dto.rentals.RentalsPreviewDTO;
+import com.uzem.book_cycle.admin.dto.rentals.RentalsBook;
 import com.uzem.book_cycle.admin.dto.rentals.RentalsResponseDTO;
-import com.uzem.book_cycle.admin.dto.sales.SalesPreviewDTO;
+import com.uzem.book_cycle.admin.dto.sales.SalesBook;
 import com.uzem.book_cycle.admin.dto.sales.SalesResponseDTO;
 import com.uzem.book_cycle.admin.service.RentalsService;
 import com.uzem.book_cycle.admin.service.SalesService;
+import com.uzem.book_cycle.book.dto.RentalsPreviewDTO;
+import com.uzem.book_cycle.book.dto.SalesPreviewDTO;
 import com.uzem.book_cycle.exception.BookException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +47,7 @@ public class PublicBookController {
         }
         return salesService.searchSalesBook(keyword)
                 .stream()
-                .map(SalesPreviewDTO::fromEntity)
+                .map(SalesBook::toPreviewDTO)
                 .collect(Collectors.toList());
     }
 
@@ -56,7 +58,7 @@ public class PublicBookController {
             throw new BookException(EMPTY_SEARCH_QUERY);
         }
         return rentalsService.searchRentalsBook(keyword).stream()
-                .map(RentalsPreviewDTO::fromEntity)
+                .map(RentalsBook::toSalesPreviewDTO)
                 .collect(Collectors.toList());
     }
 }
