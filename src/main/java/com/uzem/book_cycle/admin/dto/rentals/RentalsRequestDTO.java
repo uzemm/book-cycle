@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import static com.uzem.book_cycle.admin.type.RentalsStatus.AVAILABLE;
 
 @Getter
 @NoArgsConstructor
@@ -27,5 +26,5 @@ public class RentalsRequestDTO {
 
     @NotNull
     @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
-    private int depositFee;
+    private Long depositFee;
 }

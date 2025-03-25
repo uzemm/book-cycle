@@ -16,5 +16,5 @@ import lombok.experimental.SuperBuilder;
 public class UpdateRentalsRequestDTO extends UpdateBookRequestDTO {
     @NotNull
     @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
-    private int depositFee;
+    private Long depositFee;
 }

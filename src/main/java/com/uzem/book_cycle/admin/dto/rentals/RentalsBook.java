@@ -42,7 +42,7 @@ public class RentalsBook extends BaseEntity {
     private String link;
 
     @Column(nullable = false)
-    private int depositFee;
+    private Long depositFee;
 
     @Column(nullable = false)
     private RentalsStatus rentalsStatus;
@@ -66,6 +66,9 @@ public class RentalsBook extends BaseEntity {
                 .pubdate(request.getPubdate())
                 .link(request.getLink())
                 .depositFee(request.getDepositFee())
+                .rentalsStatus(RentalsStatus.AVAILABLE)
+                .isDeleted(false)
+                .isPublic(true)
                 .build();
     }
 

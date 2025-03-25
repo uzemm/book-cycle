@@ -22,7 +22,7 @@ public class RentalsResponseDTO {
     private String pubdate;
     private String link;
 
-    private int depositFee;
+    private Long depositFee;
     private RentalsStatus rentalsStatus;
     private boolean isDeleted;
     private boolean isPublic;
