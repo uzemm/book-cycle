@@ -105,4 +105,8 @@ public class RentalsBook extends BaseEntity {
                 .status(this.rentalsStatus)
                 .build();
     }
+
+    public void setRentalsStatus(RentalsStatus rentalsStatus) {
+        this.rentalsStatus = rentalsStatus;
+    }
 }

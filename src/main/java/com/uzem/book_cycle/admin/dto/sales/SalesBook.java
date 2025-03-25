@@ -107,4 +107,8 @@ public class SalesBook extends BaseEntity {
                 .status(this.salesStatus)
                 .build();
     }
+
+    public void setSalesStatus(SalesStatus salesStatus) {
+        this.salesStatus = salesStatus;
+    }
 }
