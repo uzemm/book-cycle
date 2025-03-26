@@ -14,7 +14,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 public class UpdateSalesRequestDTO extends UpdateBookRequestDTO {
     @NotNull
-    private int price;
+    private Long price;
     @NotNull
     private BookQuality bookQuality;
 

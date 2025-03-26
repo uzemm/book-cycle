@@ -14,6 +14,6 @@ public class RentalsPreviewDTO {
     private String title;
     private String author;
     private String image;
-    private int depositFee;
+    private Long depositFee;
     private RentalsStatus status;
 }

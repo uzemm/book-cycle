@@ -42,7 +42,7 @@ public class SalesBook extends BaseEntity {
     private String link;
 
     @Column(nullable = false)
-    private int price;
+    private Long price;
 
     @Column(nullable = false)
     private SalesStatus salesStatus;
@@ -70,6 +70,10 @@ public class SalesBook extends BaseEntity {
                 .pubdate(request.getPubdate())
                 .link(request.getLink())
                 .price(request.getPrice())
+                .bookQuality(request.getBookQuality())
+                .salesStatus(SalesStatus.AVAILABLE)
+                .isDeleted(false)
+                .isPublic(true)
                 .build();
     }
 
@@ -102,5 +106,9 @@ public class SalesBook extends BaseEntity {
                 .price(this.price)
                 .status(this.salesStatus)
                 .build();
+    }
+
+    public void setSalesStatus(SalesStatus salesStatus) {
+        this.salesStatus = salesStatus;
     }
 }

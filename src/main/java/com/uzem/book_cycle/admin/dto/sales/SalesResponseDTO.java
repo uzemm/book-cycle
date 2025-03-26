@@ -20,7 +20,7 @@ public class SalesResponseDTO {
     private String pubdate;
     private String link;
 
-    private int price;
+    private Long price;
     private SalesStatus salesStatus;
     private BookQuality bookQuality;
     private boolean isDeleted;

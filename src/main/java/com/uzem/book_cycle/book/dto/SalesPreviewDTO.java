@@ -14,6 +14,6 @@ public class SalesPreviewDTO {
     private String title;
     private String author;
     private String image;
-    private int price;
+    private Long price;
     private SalesStatus status;
 }
