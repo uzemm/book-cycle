@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.book.dto;
 
-import com.uzem.book_cycle.admin.type.RentalsStatus;
+import com.uzem.book_cycle.admin.type.RentalStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,10 +10,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RentalsPreviewDTO {
+public class RentalPreviewDTO {
     private String title;
     private String author;
     private String image;
-    private Long depositFee;
-    private RentalsStatus status;
+    private Long price;
+    private RentalStatus status;
 }

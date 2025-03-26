@@ -5,7 +5,7 @@ import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.dto.OrderRequestDTO;
 import com.uzem.book_cycle.order.type.ItemType;
 import com.uzem.book_cycle.order.type.OrderStatus;
-import com.uzem.book_cycle.order.type.PaymentMethod;
+import com.uzem.book_cycle.payment.type.PaymentMethod;
 import com.uzem.book_cycle.order.type.ShippingStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -133,7 +133,7 @@ public class Order extends BaseEntity {
                 .allMatch(orderItem -> orderItem.getItemType() == ItemType.SALE);
     }
 
-    public boolean isRentalsBook(){
+    public boolean isRentalBook(){
         return orderItems.stream()
                 .allMatch(orderItem -> orderItem.getItemType() == ItemType.RENTAL);
     }

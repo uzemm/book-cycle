@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.order.entity;
 
-import com.uzem.book_cycle.admin.dto.rentals.RentalsBook;
+import com.uzem.book_cycle.admin.dto.rental.RentalBook;
 import com.uzem.book_cycle.admin.dto.sales.SalesBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.order.dto.OrderItemRequestDTO;
@@ -23,8 +23,8 @@ public class OrderItem extends BaseEntity {
     private SalesBook salesBook;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rentals_book_id")
-    private RentalsBook rentalsBook;
+    @JoinColumn(name = "rental_book_id")
+    private RentalBook rentalBook;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -38,11 +38,11 @@ public class OrderItem extends BaseEntity {
     }
 
     public static OrderItem from(OrderItemRequestDTO request, Order order,
-                SalesBook salesBook, RentalsBook rentalsBook) {
+                SalesBook salesBook, RentalBook rentalBook) {
         // 도서 가격 타입별
         Long itemPrice = (request.getItemType() == ItemType.SALE)
                 ? salesBook.getPrice()
-                : rentalsBook.getDepositFee();
+                : rentalBook.getPrice();
 
         OrderItem.OrderItemBuilder builder = OrderItem.builder()
                     .order(order)
@@ -52,7 +52,7 @@ public class OrderItem extends BaseEntity {
             if(request.getItemType() == ItemType.SALE){
                 builder.salesBook(salesBook);
             } else{
-                builder.rentalsBook(rentalsBook);
+                builder.rentalBook(rentalBook);
             }
             return builder.build();
     }

@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.admin.dto.rentals;
+package com.uzem.book_cycle.admin.dto.rental;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RentalsRequestDTO {
+public class AdminRentalRequestDTO {
 
     private String id;
     private String title;
@@ -26,5 +26,5 @@ public class RentalsRequestDTO {
 
     @NotNull
     @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
-    private Long depositFee;
+    private Long price;
 }

@@ -1,12 +1,12 @@
 package com.uzem.book_cycle.book.controller;
 
-import com.uzem.book_cycle.admin.dto.rentals.RentalsBook;
-import com.uzem.book_cycle.admin.dto.rentals.RentalsResponseDTO;
+import com.uzem.book_cycle.admin.dto.rental.RentalBook;
+import com.uzem.book_cycle.admin.dto.rental.AdminRentalResponseDTO;
 import com.uzem.book_cycle.admin.dto.sales.SalesBook;
 import com.uzem.book_cycle.admin.dto.sales.SalesResponseDTO;
-import com.uzem.book_cycle.admin.service.RentalsService;
+import com.uzem.book_cycle.admin.service.AdminRentalService;
 import com.uzem.book_cycle.admin.service.SalesService;
-import com.uzem.book_cycle.book.dto.RentalsPreviewDTO;
+import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
 import com.uzem.book_cycle.book.dto.SalesPreviewDTO;
 import com.uzem.book_cycle.exception.BookException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import static com.uzem.book_cycle.naver.type.BookErrorCode.EMPTY_SEARCH_QUERY;
 public class PublicBookController {
 
     private final SalesService salesService;
-    private final RentalsService rentalsService;
+    private final AdminRentalService rentalService;
 
     @GetMapping("/sales/{saleId}")
     public ResponseEntity<SalesResponseDTO> salesDetail(@PathVariable Long saleId){
@@ -34,8 +34,8 @@ public class PublicBookController {
     }
 
     @GetMapping("/rentals/{rentalId}")
-    public ResponseEntity<RentalsResponseDTO> rentalsDetail(@PathVariable Long rentalId){
-        RentalsResponseDTO response = rentalsService.getRentalsBookDetail(rentalId);
+    public ResponseEntity<AdminRentalResponseDTO> rentalDetail(@PathVariable Long rentalId){
+        AdminRentalResponseDTO response = rentalService.getRentalBookDetail(rentalId);
         return ResponseEntity.ok(response);
     }
 
@@ -47,18 +47,18 @@ public class PublicBookController {
         }
         return salesService.searchSalesBook(keyword)
                 .stream()
-                .map(SalesBook::toPreviewDTO)
+                .map(SalesBook::toSalesPreviewDTO)
                 .collect(Collectors.toList());
     }
 
     @GetMapping("/rentals")
     @ResponseBody
-    public List<RentalsPreviewDTO> searchRentals(@RequestParam("keyword") String keyword) {
+    public List<RentalPreviewDTO> searchRentalBooks(@RequestParam("keyword") String keyword) {
         if(!StringUtils.hasText(keyword)) {
             throw new BookException(EMPTY_SEARCH_QUERY);
         }
-        return rentalsService.searchRentalsBook(keyword).stream()
-                .map(RentalsBook::toSalesPreviewDTO)
+        return rentalService.searchRentalBook(keyword).stream()
+                .map(RentalBook::toRentalPreviewDTO)
                 .collect(Collectors.toList());
     }
 }

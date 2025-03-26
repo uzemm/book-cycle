@@ -10,14 +10,14 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-public enum RentalsErrorCode {
-    RENTALS_BOOK_NOT_FOUND("대여 도서를 찾을 수 없습니다.")
+public enum RentalErrorCode {
+    RENTAL_BOOK_NOT_FOUND("대여 도서를 찾을 수 없습니다.")
     ;
 
     private String description;
     private final List<String> fields;
 
-    RentalsErrorCode(String description, String... fields) {
+    RentalErrorCode(String description, String... fields) {
         this.description = description;
         this.fields = Arrays.asList(fields);
     }

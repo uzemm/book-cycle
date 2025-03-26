@@ -1,12 +1,12 @@
 package com.uzem.book_cycle.order.service;
 
-import com.uzem.book_cycle.admin.dto.rentals.RentalsBook;
+import com.uzem.book_cycle.admin.dto.rental.RentalBook;
 import com.uzem.book_cycle.admin.dto.sales.SalesBook;
-import com.uzem.book_cycle.admin.repository.RentalsRepository;
+import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.OrderException;
-import com.uzem.book_cycle.exception.RentalsException;
+import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.exception.SalesException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static com.uzem.book_cycle.admin.type.RentalsErrorCode.RENTALS_BOOK_NOT_FOUND;
-import static com.uzem.book_cycle.admin.type.RentalsStatus.RENTED;
+import static com.uzem.book_cycle.admin.type.RentalErrorCode.RENTAL_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
 import static com.uzem.book_cycle.admin.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
 import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.INSUFFICIENT_POINTS;
@@ -42,7 +42,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final MemberRepository memberRepository;
     private final SalesRepository salesRepository;
-    private final RentalsRepository rentalsRepository;
+    private final AdminRentalRepository rentalRepository;
 
     private static final double REWARD_POINT = 0.01;
 
@@ -95,7 +95,7 @@ public class OrderService {
             if(item.getItemType() == SALE) {
                 item.getSalesBook().setSalesStatus(SOLD);
             } else {
-                item.getRentalsBook().setRentalsStatus(RENTED);
+                item.getRentalBook().setRentalStatus(RENTED);
             }
         });
 
@@ -103,8 +103,8 @@ public class OrderService {
                 .map(OrderItem::getSalesBook)
                         .filter(Objects::nonNull) // null 방지
                         .collect(Collectors.toList()));
-        rentalsRepository.saveAll(orderItems.stream()
-                .map(OrderItem::getRentalsBook)
+        rentalRepository.saveAll(orderItems.stream()
+                .map(OrderItem::getRentalBook)
                         .filter(Objects::nonNull)
                 .collect(Collectors.toList()));
     }
@@ -118,9 +118,9 @@ public class OrderService {
                                 .orElseThrow(() -> new SalesException(SALES_BOOK_NOT_FOUND));
                         return OrderItem.from(item, order, salesBook, null);
                     } else {
-                        RentalsBook rentalsBook = rentalsRepository.findById(item.getBookId())
-                                .orElseThrow(() -> new RentalsException(RENTALS_BOOK_NOT_FOUND));
-                        return OrderItem.from(item, order, null, rentalsBook);
+                        RentalBook rentalBook = rentalRepository.findById(item.getBookId())
+                                .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
+                        return OrderItem.from(item, order, null, rentalBook);
                     }
                 }).collect(Collectors.toList());
         return orderItems;

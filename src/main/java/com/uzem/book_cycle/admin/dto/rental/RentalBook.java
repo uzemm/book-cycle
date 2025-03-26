@@ -1,8 +1,8 @@
-package com.uzem.book_cycle.admin.dto.rentals;
+package com.uzem.book_cycle.admin.dto.rental;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
-import com.uzem.book_cycle.admin.type.RentalsStatus;
-import com.uzem.book_cycle.book.dto.RentalsPreviewDTO;
+import com.uzem.book_cycle.admin.type.RentalStatus;
+import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
 import com.uzem.book_cycle.entity.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,7 +16,7 @@ import java.time.LocalDate;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 @Entity
-public class RentalsBook extends BaseEntity {
+public class RentalBook extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
@@ -42,10 +42,10 @@ public class RentalsBook extends BaseEntity {
     private String link;
 
     @Column(nullable = false)
-    private Long depositFee;
+    private Long price;
 
     @Column(nullable = false)
-    private RentalsStatus rentalsStatus;
+    private RentalStatus rentalStatus;
 
     private LocalDate paymentDeadline;
 
@@ -55,8 +55,8 @@ public class RentalsBook extends BaseEntity {
     @Column(nullable = false)
     private boolean isPublic;
 
-    public static RentalsBook from(RentalsRequestDTO request) {
-        return RentalsBook.builder()
+    public static RentalBook from(AdminRentalRequestDTO request) {
+        return RentalBook.builder()
                 .title(request.getTitle())
                 .author(request.getAuthor())
                 .publisher(request.getPublisher())
@@ -65,16 +65,15 @@ public class RentalsBook extends BaseEntity {
                 .image(request.getImage())
                 .pubdate(request.getPubdate())
                 .link(request.getLink())
-                .depositFee(request.getDepositFee())
-                .rentalsStatus(RentalsStatus.AVAILABLE)
+                .price(500L)
+                .rentalStatus(RentalStatus.AVAILABLE)
                 .isDeleted(false)
                 .isPublic(true)
                 .build();
     }
 
-    public void updateRentalsBook(UpdateRentalsRequestDTO update){
+    public void updateRentalBook(UpdateAdminRentalRequestDTO update){
         updateCommonBookFields(update);
-        this.depositFee = update.getDepositFee();
     }
 
     private void updateCommonBookFields(UpdateBookRequestDTO update) {
@@ -96,17 +95,17 @@ public class RentalsBook extends BaseEntity {
         this.isDeleted = true;
     }
 
-    public RentalsPreviewDTO toSalesPreviewDTO(){
-        return RentalsPreviewDTO.builder()
+    public RentalPreviewDTO toRentalPreviewDTO(){
+        return RentalPreviewDTO.builder()
                 .title(this.title)
                 .author(this.author)
                 .image(this.image)
-                .depositFee(this.depositFee)
-                .status(this.rentalsStatus)
+                .price(this.price)
+                .status(this.rentalStatus)
                 .build();
     }
 
-    public void setRentalsStatus(RentalsStatus rentalsStatus) {
-        this.rentalsStatus = rentalsStatus;
+    public void setRentalStatus(RentalStatus rentalStatus) {
+        this.rentalStatus = rentalStatus;
     }
 }

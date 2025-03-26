@@ -98,7 +98,7 @@ public class SalesBook extends BaseEntity {
         this.isDeleted = true;
     }
 
-    public SalesPreviewDTO toPreviewDTO() {
+    public SalesPreviewDTO toSalesPreviewDTO() {
         return SalesPreviewDTO.builder()
                 .title(this.title)
                 .author(this.author)

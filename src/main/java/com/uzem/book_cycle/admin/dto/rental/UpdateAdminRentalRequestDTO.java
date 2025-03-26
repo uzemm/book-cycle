@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.admin.dto.rentals;
+package com.uzem.book_cycle.admin.dto.rental;
 
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
@@ -13,8 +13,8 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateRentalsRequestDTO extends UpdateBookRequestDTO {
+public class UpdateAdminRentalRequestDTO extends UpdateBookRequestDTO {
     @NotNull
     @Min(value = 0, message = "가격은 0 이상이어야 합니다.")
-    private Long depositFee;
+    private Long price;
 }
