@@ -19,8 +19,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-import static com.uzem.book_cycle.order.type.OrderStatus.PAID;
+import static com.uzem.book_cycle.order.type.OrderStatus.PAID_READY;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -79,6 +80,10 @@ public class Order extends BaseEntity {
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    private String tossOrderId;
+
+    private String orderName;
+
     public void addOrderItem(OrderItem orderItem) {
         this.orderItems.add(orderItem);
         orderItem.setOrder(this);
@@ -96,11 +101,13 @@ public class Order extends BaseEntity {
                 .paymentMethod(request.getPaymentMethod())
                 .usedPoint(request.getUsedPoint() != null ? request.getUsedPoint() : 0)
                 .orderNumber(createOrderNumber())
-                .orderStatus(PAID)
+                .orderStatus(PAID_READY)
                 .paymentMethod(request.getPaymentMethod())
                 .rewardPoint(100L)
                 .shippingFee(3500L)
                 .shippingStatus(ShippingStatus.SHIPPED)
+                .tossOrderId(generateTossOrderId())
+                .orderName(createOrderName(orderItems))
                 .build();
 
         for(OrderItem orderItem : orderItems) {
@@ -128,13 +135,19 @@ public class Order extends BaseEntity {
                 + RandomUtils.nextInt(100, 999);
     }
 
-    public boolean isSalesBook(){
-        return orderItems.stream()
-                .allMatch(orderItem -> orderItem.getItemType() == ItemType.SALE);
+    private static String generateTossOrderId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
-    public boolean isRentalBook(){
-        return orderItems.stream()
-                .allMatch(orderItem -> orderItem.getItemType() == ItemType.RENTAL);
+    private static String createOrderName(List<OrderItem> orderItems){
+        int count = orderItems.size();
+        String title;
+        if(orderItems.get(0).getItemType() == ItemType.SALE ){
+            title = orderItems.get(0).getSalesBook().getTitle();
+        } else {
+            title = orderItems.get(0).getRentalBook().getTitle();
+        }
+
+        return count == 1 ? title : title + " 외 " + (count-1) + "권";
     }
 }
