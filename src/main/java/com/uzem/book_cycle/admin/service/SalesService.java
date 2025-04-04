@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.admin.service;
 
-import com.uzem.book_cycle.admin.dto.sales.SalesBook;
+import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.dto.sales.SalesRequestDTO;
 import com.uzem.book_cycle.admin.dto.sales.SalesResponseDTO;
 import com.uzem.book_cycle.admin.dto.sales.UpdateSalesRequestDTO;
