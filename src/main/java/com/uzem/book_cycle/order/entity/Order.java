@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static com.uzem.book_cycle.order.type.OrderStatus.COMPLETED;
 import static com.uzem.book_cycle.order.type.OrderStatus.PAID_READY;
 
 @Getter
@@ -85,6 +86,9 @@ public class Order extends BaseEntity {
     private String orderName;
 
     public void addOrderItem(OrderItem orderItem) {
+        if(this.orderItems == null) {
+            this.orderItems = new ArrayList<>();
+        }
         this.orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
@@ -98,7 +102,6 @@ public class Order extends BaseEntity {
                 .receiverPhone(request.getReceiverPhone())
                 .receiverName(request.getReceiverName())
                 .deliveryMessage(request.getDeliveryMessage())
-                .paymentMethod(request.getPaymentMethod())
                 .usedPoint(request.getUsedPoint() != null ? request.getUsedPoint() : 0)
                 .orderNumber(createOrderNumber())
                 .orderStatus(PAID_READY)
@@ -107,12 +110,7 @@ public class Order extends BaseEntity {
                 .shippingFee(3500L)
                 .shippingStatus(ShippingStatus.SHIPPED)
                 .tossOrderId(generateTossOrderId())
-                .orderName(createOrderName(orderItems))
                 .build();
-
-        for(OrderItem orderItem : orderItems) {
-            order.addOrderItem(orderItem);
-        }
 
         return order;
     }
@@ -130,6 +128,10 @@ public class Order extends BaseEntity {
         this.rewardPoint = rewardPoint;
     }
 
+    public void orderStatusCompleted() {
+        this.orderStatus = COMPLETED;
+    }
+
     public static String createOrderNumber() {
         return "BC" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
                 + RandomUtils.nextInt(100, 999);
@@ -139,15 +141,24 @@ public class Order extends BaseEntity {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
-    private static String createOrderName(List<OrderItem> orderItems){
-        int count = orderItems.size();
-        String title;
-        if(orderItems.get(0).getItemType() == ItemType.SALE ){
-            title = orderItems.get(0).getSalesBook().getTitle();
-        } else {
-            title = orderItems.get(0).getRentalBook().getTitle();
+    public static String createOrderName(List<OrderItem> orderItems){
+        if (orderItems == null || orderItems.isEmpty()) {
+            return "도서 없음";
         }
 
-        return count == 1 ? title : title + " 외 " + (count-1) + "권";
+        OrderItem first = orderItems.get(0);
+        String title = "제목없음";
+
+        if(orderItems.get(0).getItemType() == ItemType.SALE ){
+            title = first.getSalesBook().getTitle();
+        } else {
+            title = first.getRentalBook().getTitle();
+        }
+
+        return orderItems.size() == 1 ? title : title + " 외 " + (orderItems.size()-1) + "권";
+    }
+
+    public void setOrderName(String orderName) {
+        this.orderName = orderName;
     }
 }

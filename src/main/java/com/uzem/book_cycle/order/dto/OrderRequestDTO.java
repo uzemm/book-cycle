@@ -1,6 +1,7 @@
 package com.uzem.book_cycle.order.dto;
 
-import com.uzem.book_cycle.order.type.PaymentMethod;
+import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.payment.type.PaymentMethod;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -32,5 +33,7 @@ public class OrderRequestDTO {
     private Long usedPoint;
 
     private List<OrderItemRequestDTO> orderItems; // 바로구매일 때만 채움
+
+    private PaymentRequestDTO payment;
 
 }

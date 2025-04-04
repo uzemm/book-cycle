@@ -1,6 +1,8 @@
-package com.uzem.book_cycle.admin.dto.sales;
+package com.uzem.book_cycle.admin.entity;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
+import com.uzem.book_cycle.admin.dto.sales.SalesRequestDTO;
+import com.uzem.book_cycle.admin.dto.sales.UpdateSalesRequestDTO;
 import com.uzem.book_cycle.admin.type.BookQuality;
 import com.uzem.book_cycle.admin.type.SalesStatus;
 import com.uzem.book_cycle.book.dto.SalesPreviewDTO;
@@ -10,6 +12,8 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
+
+import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -108,7 +112,7 @@ public class SalesBook extends BaseEntity {
                 .build();
     }
 
-    public void setSalesStatus(SalesStatus salesStatus) {
-        this.salesStatus = salesStatus;
+    public void salesStatusSold() {
+        this.salesStatus = SOLD;
     }
 }
