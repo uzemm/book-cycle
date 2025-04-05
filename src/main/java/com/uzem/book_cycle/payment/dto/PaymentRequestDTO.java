@@ -8,7 +8,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.OffsetDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -21,12 +20,6 @@ public class PaymentRequestDTO {
     private Long amount;
     private PaymentStatus status;
     private String orderName;
-    private String cancelReason;
-    private Long cancelAmount;
-    private OffsetDateTime canceledAt;
-    private String transactionKey;
-    private String cancelStatus;
-    private Long refundableAmount;
 
     @JsonProperty("orderId")
     private String tossOrderId;
