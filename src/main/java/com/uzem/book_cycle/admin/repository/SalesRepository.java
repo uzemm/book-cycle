@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.admin.repository;
 
-import com.uzem.book_cycle.admin.dto.sales.SalesBook;
+import com.uzem.book_cycle.admin.entity.SalesBook;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

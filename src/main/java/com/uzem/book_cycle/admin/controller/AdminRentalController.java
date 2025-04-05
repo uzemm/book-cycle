@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/admin/rentals")
-public class RentalController {
+public class AdminRentalController {
 
     private final AdminRentalService rentalService;
 

@@ -19,8 +19,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-import static com.uzem.book_cycle.order.type.OrderStatus.PAID;
+import static com.uzem.book_cycle.order.type.OrderStatus.COMPLETED;
+import static com.uzem.book_cycle.order.type.OrderStatus.PAID_READY;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -79,7 +81,14 @@ public class Order extends BaseEntity {
     @Builder.Default
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    private String tossOrderId;
+
+    private String orderName;
+
     public void addOrderItem(OrderItem orderItem) {
+        if(this.orderItems == null) {
+            this.orderItems = new ArrayList<>();
+        }
         this.orderItems.add(orderItem);
         orderItem.setOrder(this);
     }
@@ -93,19 +102,15 @@ public class Order extends BaseEntity {
                 .receiverPhone(request.getReceiverPhone())
                 .receiverName(request.getReceiverName())
                 .deliveryMessage(request.getDeliveryMessage())
-                .paymentMethod(request.getPaymentMethod())
                 .usedPoint(request.getUsedPoint() != null ? request.getUsedPoint() : 0)
                 .orderNumber(createOrderNumber())
-                .orderStatus(PAID)
+                .orderStatus(PAID_READY)
                 .paymentMethod(request.getPaymentMethod())
                 .rewardPoint(100L)
                 .shippingFee(3500L)
                 .shippingStatus(ShippingStatus.SHIPPED)
+                .tossOrderId(generateTossOrderId())
                 .build();
-
-        for(OrderItem orderItem : orderItems) {
-            order.addOrderItem(orderItem);
-        }
 
         return order;
     }
@@ -123,18 +128,37 @@ public class Order extends BaseEntity {
         this.rewardPoint = rewardPoint;
     }
 
+    public void orderStatusCompleted() {
+        this.orderStatus = COMPLETED;
+    }
+
     public static String createOrderNumber() {
         return "BC" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
                 + RandomUtils.nextInt(100, 999);
     }
 
-    public boolean isSalesBook(){
-        return orderItems.stream()
-                .allMatch(orderItem -> orderItem.getItemType() == ItemType.SALE);
+    private static String generateTossOrderId() {
+        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
-    public boolean isRentalBook(){
-        return orderItems.stream()
-                .allMatch(orderItem -> orderItem.getItemType() == ItemType.RENTAL);
+    public static String createOrderName(List<OrderItem> orderItems){
+        if (orderItems == null || orderItems.isEmpty()) {
+            return "도서 없음";
+        }
+
+        OrderItem first = orderItems.get(0);
+        String title = "제목없음";
+
+        if(orderItems.get(0).getItemType() == ItemType.SALE ){
+            title = first.getSalesBook().getTitle();
+        } else {
+            title = first.getRentalBook().getTitle();
+        }
+
+        return orderItems.size() == 1 ? title : title + " 외 " + (orderItems.size()-1) + "권";
+    }
+
+    public void setOrderName(String orderName) {
+        this.orderName = orderName;
     }
 }

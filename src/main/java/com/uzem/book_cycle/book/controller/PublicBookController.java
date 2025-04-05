@@ -1,8 +1,8 @@
 package com.uzem.book_cycle.book.controller;
 
-import com.uzem.book_cycle.admin.dto.rental.RentalBook;
+import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalResponseDTO;
-import com.uzem.book_cycle.admin.dto.sales.SalesBook;
+import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.dto.sales.SalesResponseDTO;
 import com.uzem.book_cycle.admin.service.AdminRentalService;
 import com.uzem.book_cycle.admin.service.SalesService;

@@ -1,6 +1,7 @@
 package com.uzem.book_cycle.member.entity;
 
 import com.uzem.book_cycle.entity.BaseEntity;
+import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.type.MemberStatus;
 import com.uzem.book_cycle.member.type.Role;
 import com.uzem.book_cycle.member.type.SocialType;
@@ -10,6 +11,8 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import static com.uzem.book_cycle.member.type.MemberErrorCode.INSUFFICIENT_POINTS;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -75,7 +78,19 @@ public class Member extends BaseEntity {
         this.email = email;
     }
 
-    public void setPoint(long point) {
-        this.point = point;
+    public void usePoint(long point) {
+        if(this.point < point){
+            throw new MemberException(INSUFFICIENT_POINTS);
+        }
+        this.point -= point;
     }
+
+    public void rewardPoint(long point) {
+        this.point += point;
+    }
+
+    public void rentalCnt() {
+        this.rentalCnt += 1;
+    }
+
 }

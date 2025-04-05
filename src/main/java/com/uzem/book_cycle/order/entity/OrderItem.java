@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.order.entity;
 
-import com.uzem.book_cycle.admin.dto.rental.RentalBook;
-import com.uzem.book_cycle.admin.dto.sales.SalesBook;
+import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.order.dto.OrderItemRequestDTO;
 import com.uzem.book_cycle.order.type.ItemType;
@@ -18,11 +18,11 @@ public class OrderItem extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "sales_book_id")
     private SalesBook salesBook;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "rental_book_id")
     private RentalBook rentalBook;
 

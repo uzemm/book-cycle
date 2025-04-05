@@ -1,6 +1,8 @@
-package com.uzem.book_cycle.admin.dto.rental;
+package com.uzem.book_cycle.admin.entity;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
+import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
+import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
 import com.uzem.book_cycle.entity.BaseEntity;
@@ -10,6 +12,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+
+import static com.uzem.book_cycle.admin.type.RentalStatus.AVAILABLE;
+import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
 
 
 @Getter
@@ -66,7 +71,7 @@ public class RentalBook extends BaseEntity {
                 .pubdate(request.getPubdate())
                 .link(request.getLink())
                 .price(500L)
-                .rentalStatus(RentalStatus.AVAILABLE)
+                .rentalStatus(AVAILABLE)
                 .isDeleted(false)
                 .isPublic(true)
                 .build();
@@ -105,7 +110,7 @@ public class RentalBook extends BaseEntity {
                 .build();
     }
 
-    public void setRentalStatus(RentalStatus rentalStatus) {
-        this.rentalStatus = rentalStatus;
+    public RentalStatus rentalStatusRented() {
+       return this.rentalStatus = RENTED;
     }
 }
