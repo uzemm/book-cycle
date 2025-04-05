@@ -1,6 +1,7 @@
 package com.uzem.book_cycle.payment.controller;
 
 import com.uzem.book_cycle.exception.OrderException;
+import com.uzem.book_cycle.exception.PaymentException;
 import com.uzem.book_cycle.payment.dto.CancelRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+
+import static com.uzem.book_cycle.payment.type.PaymentErrorCode.PAYMENT_SESSION_MISMATCH;
 
 @Controller
 @RequiredArgsConstructor
@@ -52,7 +55,7 @@ public class PaymentController {
 
             // 검증
             if (!request.getTossOrderId().equals(savedOrderId) || !request.getAmount().equals(savedAmount)) {
-                throw new RuntimeException("세션의 결제 정보와 다릅니다.");
+                throw new PaymentException(PAYMENT_SESSION_MISMATCH);
             }
             // 결제 승인 요청
             PaymentResponseDTO response = paymentService.processPayment(request);

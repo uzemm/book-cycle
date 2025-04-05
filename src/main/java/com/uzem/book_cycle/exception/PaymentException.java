@@ -16,6 +16,6 @@ public class PaymentException extends RuntimeException {
 
     public PaymentException(PaymentErrorCode paymentErrorCode){
         this.paymentErrorCode = paymentErrorCode;
-        this.errorMessage = paymentErrorCode.getDescription();
+        this.errorMessage = paymentErrorCode.getMessage();
     }
 }
