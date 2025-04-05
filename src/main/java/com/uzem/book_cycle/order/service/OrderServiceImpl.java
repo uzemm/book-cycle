@@ -27,8 +27,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.uzem.book_cycle.admin.type.RentalErrorCode.RENTAL_BOOK_NOT_FOUND;
-import static com.uzem.book_cycle.admin.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
+import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+import static com.uzem.book_cycle.admin.type.SalesErrorCode.*;
+import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
 import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
 import static com.uzem.book_cycle.order.type.ItemType.SALE;
 import static com.uzem.book_cycle.order.type.OrderErrorCode.*;
@@ -68,12 +70,12 @@ public class OrderServiceImpl implements OrderService{
         if(requestDTO.getOrderItems() == null || requestDTO.getOrderItems().isEmpty()) {
             throw new OrderException(ORDER_ITEM_NOT_FOUND);
         }
-
         // 1. 적립 포인트 계산
         long rewardPoint = calculateRewardPoint(requestDTO.getOrderItems());
 
         // 2. 주문 엔티티 생성
         Order order = Order.from(requestDTO, new ArrayList<>(), member);
+        checkDuplicateOrder(order.getTossOrderId()); // 중복 주문 확인
 
         // 3. 주문 항목 생성
         List<OrderItem> orderItems = getOrderItems(requestDTO, order);
@@ -95,6 +97,13 @@ public class OrderServiceImpl implements OrderService{
         orderRepository.save(order);
 
         return order;
+    }
+
+    // 중복 주문 확인
+    private void checkDuplicateOrder(String tossOrderId) {
+        if(orderRepository.findByTossOrderId(tossOrderId).isPresent()) {
+            throw new OrderException(DUPLICATE_ORDER);
+        }
     }
 
     // 판매, 도서 상태 변경 및 저장
@@ -137,14 +146,32 @@ public class OrderServiceImpl implements OrderService{
                     if (item.getItemType() == SALE) {
                         SalesBook salesBook = salesRepository.findById(item.getBookId())
                                 .orElseThrow(() -> new SalesException(SALES_BOOK_NOT_FOUND));
+                        validateSaleBookStatus(salesBook);
                         return OrderItem.from(item, order, salesBook, null);
                     } else {
                         RentalBook rentalBook = rentalRepository.findById(item.getBookId())
                                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
+                        validateRentalBookStatus(rentalBook);
                         return OrderItem.from(item, order, null, rentalBook);
                     }
                 }).collect(Collectors.toList());
         return orderItems;
+    }
+
+    private static void validateSaleBookStatus(SalesBook saleBook) {
+        if(saleBook.getSalesStatus() == SOLD){ // 판매완료
+            throw new SalesException(ALREADY_SOLD_OUT_SALE_BOOK);
+        }
+    }
+
+    private static void validateRentalBookStatus(RentalBook rentalBook) {
+        if(rentalBook.getRentalStatus() == RENTED){ // 대여중
+            throw new RentalException(ALREADY_RENTED);
+        } else if(rentalBook.getRentalStatus() == OVERDUE){ // 연체중
+            throw new RentalException(OVERDUE_RENTAL_BOOK);
+        } else if(rentalBook.getRentalStatus() == PENDING_PAYMENT){ // 결제 대기중
+            throw new RentalException(PENDING_PAYMENT_RENTAL_BOOK);
+        }
     }
 
     // 총금액 계산
@@ -152,9 +179,10 @@ public class OrderServiceImpl implements OrderService{
         long totalItemPrice = orderItems.stream()
                 .mapToLong(OrderItem::getItemPrice)
                 .sum();
-        long usedPoint = order.getUsedPoint();
 
+        long usedPoint = order.getUsedPoint();
         long totalPrice = totalItemPrice + order.getShippingFee() - usedPoint;
+
         if(totalPrice <= 0){
             throw new OrderException(INVALID_TOTAL_PRICE);
         }
