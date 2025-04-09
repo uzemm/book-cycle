@@ -14,6 +14,6 @@ public class RentalException extends RuntimeException {
 
     public RentalException(RentalErrorCode rentalErrorCode) {
         this.rentalErrorCode = rentalErrorCode;
-        this.errorMessage = rentalErrorCode.getDescription();
+        this.errorMessage = rentalErrorCode.getMessage();
     }
 }

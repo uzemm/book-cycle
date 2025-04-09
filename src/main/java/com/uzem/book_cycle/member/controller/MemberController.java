@@ -119,8 +119,66 @@ public class MemberController {
         return ResponseEntity.ok().body("예약 취소 완료");
     }
 
+    // 대여 도서 조회
+    @GetMapping("/rentals")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<RentalHistoryResponseDTO>> getMyRentals(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        List<RentalHistoryResponseDTO> myRentals = rentalService.getMyRentals(userDetails.getMember());
+        return ResponseEntity.ok(myRentals);
+    }
 
+    // 연체 도서 조회
+    @GetMapping("/overdues")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<RentalHistoryResponseDTO>> getMyOverdues(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        List<RentalHistoryResponseDTO> myOverdue = rentalService.getMyOverdue(userDetails.getMember());
+        return ResponseEntity.ok(myOverdue);
+    }
 
+    // 대여 이력 조회
+    @GetMapping("/rental-histories")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<RentalHistoryResponseDTO>> getMyRentalHistories(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        List<RentalHistoryResponseDTO> myRentalHistories =
+                rentalService.getMyRentalHistories(userDetails.getMember());
+        return ResponseEntity.ok(myRentalHistories);
+    }
 
+    // 반납하기
+    @PostMapping("/return")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<RentalHistoryResponseDTO> returnMyRental(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody RentalRequestDTO requestDTO){
+        // 대여도서 조회
+        RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
+                .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
+        // 대여이력 조회
+        RentalHistory rentalHistory = rentalHistoryRepository
+                .findByRentalBookAndMember(rentalBook, userDetails.getMember())
+                .orElseThrow(() -> new RentalException(RENTAL_HISTORY_NOT_FOUND));
+        RentalHistoryResponseDTO rentalHistoryResponseDTO = rentalService.returnRental(
+                userDetails.getMember(), requestDTO.getPayment(), rentalHistory);
 
+        return ResponseEntity.ok(rentalHistoryResponseDTO);
+    }
+
+    // 결제 대기 취소
+    @DeleteMapping("/reservations/pending")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<RentalResponseDTO> cancelPendingRental(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestBody RentalRequestDTO requestDTO){
+        // 대여도서 조회
+        RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
+                .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
+
+        RentalResponseDTO rentalResponseDTO = rentalService.cancelPendingPayment(
+                rentalBook, userDetails.getMember());
+
+        return ResponseEntity.ok(rentalResponseDTO);
+    }
 }
