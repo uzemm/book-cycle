@@ -1,11 +1,11 @@
 package com.uzem.book_cycle.security.token;
 
+import com.uzem.book_cycle.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-@Getter
 @AllArgsConstructor
-public enum TokenErrorCode {
+public enum TokenErrorCode implements ErrorCode{
     NOT_A_REFRESH_TOKEN("리프레시 토큰이 아닙니다."),
     TOKEN_ALREADY_LOGGED_OUT("로그아웃된 토큰입니다."),
     INVALID_TOKEN("잘못된 JWT 서명입니다."),
@@ -15,4 +15,14 @@ public enum TokenErrorCode {
     ;
 
     private String description;
+
+    @Override
+    public String getCode() {
+        return this.name();
+    }
+
+    @Override
+    public String getMessage() {
+        return this.description;
+    }
 }

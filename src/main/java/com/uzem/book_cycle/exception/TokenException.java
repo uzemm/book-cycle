@@ -14,6 +14,6 @@ public class TokenException extends RuntimeException {
 
     public TokenException(TokenErrorCode tokenErrorCode) {
       this.tokenErrorCode = tokenErrorCode;
-      this.errorMessage = tokenErrorCode.getDescription();
+      this.errorMessage = tokenErrorCode.getMessage();
     }
 }

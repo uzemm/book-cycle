@@ -1,7 +1,9 @@
 package com.uzem.book_cycle.admin.type;
 
 import com.uzem.book_cycle.exception.ErrorCode;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor
 public enum RentalErrorCode implements ErrorCode {
     RENTAL_BOOK_NOT_FOUND("대여 도서를 찾을 수 없습니다."),
     ALREADY_RENTED("이미 대여 중인 도서입니다."),
@@ -16,10 +18,6 @@ public enum RentalErrorCode implements ErrorCode {
     ;
 
     private String description;
-
-    RentalErrorCode(String description) {
-        this.description = description;
-    }
 
     @Override
     public String getCode() {
