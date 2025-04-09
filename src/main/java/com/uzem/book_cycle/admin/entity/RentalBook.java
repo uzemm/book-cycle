@@ -5,16 +5,17 @@ import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
+import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.entity.BaseEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToOne;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.time.LocalDate;
 
-import static com.uzem.book_cycle.admin.type.RentalStatus.AVAILABLE;
-import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
+import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 
 
 @Getter
@@ -52,13 +53,14 @@ public class RentalBook extends BaseEntity {
     @Column(nullable = false)
     private RentalStatus rentalStatus;
 
-    private LocalDate paymentDeadline;
-
     @Column(nullable = false)
     private boolean isDeleted;
 
     @Column(nullable = false)
     private boolean isPublic;
+
+    @OneToOne(mappedBy = "rentalBook", cascade = CascadeType.ALL) // 양방향
+    private Reservation reservation;
 
     public static RentalBook from(AdminRentalRequestDTO request) {
         return RentalBook.builder()
@@ -77,8 +79,11 @@ public class RentalBook extends BaseEntity {
                 .build();
     }
 
+    // 대여도서 수정
     public void updateRentalBook(UpdateAdminRentalRequestDTO update){
         updateCommonBookFields(update);
+        this.price = update.getPrice();
+        this.rentalStatus = update.getRentalStatus();
     }
 
     private void updateCommonBookFields(UpdateBookRequestDTO update) {
@@ -92,10 +97,12 @@ public class RentalBook extends BaseEntity {
         this.link = update.getLink();
     }
 
+    // 공개
     public void updateIsPublic(){
         this.isPublic = true;
     }
 
+    // 소프트 딜리트
     public void delete(){
         this.isDeleted = true;
     }
@@ -112,5 +119,27 @@ public class RentalBook extends BaseEntity {
 
     public RentalStatus rentalStatusRented() {
        return this.rentalStatus = RENTED;
+    }
+
+    // 대여 상태인지
+    public boolean isRented() {
+        return this.rentalStatus == RENTED;
+    }
+
+    public void setReservation(Reservation reservation) {
+        this.reservation = reservation;
+    }
+
+    public void updateAvailable(){
+        this.rentalStatus = AVAILABLE;
+    }
+
+    // 예약 차례 결제 대기
+    public void updatePendingPayment(){
+        this.rentalStatus = PENDING_PAYMENT;
+    }
+
+    public boolean isReservation(Reservation reservation) {
+        return this.reservation == reservation;
     }
 }

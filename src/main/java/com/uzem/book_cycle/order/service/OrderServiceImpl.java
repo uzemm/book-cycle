@@ -4,7 +4,8 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
-import com.uzem.book_cycle.book.service.RentalService;
+import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.book.service.RentalServiceImpl;
 import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.exception.SalesException;
@@ -43,7 +44,8 @@ public class OrderServiceImpl implements OrderService{
     private final SalesRepository salesRepository;
     private final AdminRentalRepository rentalRepository;
     private final PaymentService paymentService;
-    private final RentalService rentalService;
+    private final RentalServiceImpl rentalService;
+    private final ReservationRepository reservationRepository;
 
     private static final double REWARD_POINT = 0.01;
 
@@ -122,8 +124,11 @@ public class OrderServiceImpl implements OrderService{
                 .collect(Collectors.toList());
 
         rentalBooks.forEach(rental -> {
-            rental.rentalStatusRented();
-            rentalService.createRentalHistory(rental, member, now);
+            rental.rentalStatusRented(); // 대여상태 변경
+            rentalService.createRentalHistory(rental, member, now); // 대여 이력 생성
+            if(rental.getReservation() != null){
+                reservationRepository.deleteByRentalBook(rental); // 확정 예약 삭제
+            }
             member.rentalCnt(); // 대여 권수 ++
         });
 

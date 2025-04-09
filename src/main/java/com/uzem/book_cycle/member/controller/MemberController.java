@@ -1,5 +1,12 @@
 package com.uzem.book_cycle.member.controller;
 
+import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
+import com.uzem.book_cycle.book.dto.*;
+import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.book.service.RentalService;
+import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.dto.*;
 import com.uzem.book_cycle.member.service.MemberService;
 import com.uzem.book_cycle.security.CustomUserDetails;
@@ -13,6 +20,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -21,8 +32,11 @@ public class MemberController {
 
     private final MemberService memberService;
     private final TokenProvider tokenProvider;
+    private final RentalService rentalService;
+    private final AdminRentalRepository adminRentalRepository;
+    private final RentalHistoryRepository rentalHistoryRepository;
 
-
+    // 내정보
     @GetMapping()
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberResponseDTO> getMyInfo(
@@ -81,4 +95,32 @@ public class MemberController {
 
         return ResponseEntity.ok(memberResponseDTO);
     }
+
+    // 예약조회
+    @GetMapping("/reservations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ReservationResponseDTO>> getMyReservations(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        List<ReservationResponseDTO> myReservations =
+                rentalService.getMyReservations(userDetails.getMember());
+        return ResponseEntity.ok(myReservations);
+    }
+
+    // 예약취소
+    @DeleteMapping("/reservations")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> cancelMyReservation(
+            @RequestBody ReservationRequestDTO requestDTO,
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
+                .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
+                rentalService.cancelMyReservation(rentalBook, userDetails.getMember());
+
+        return ResponseEntity.ok().body("예약 취소 완료");
+    }
+
+
+
+
+
 }
