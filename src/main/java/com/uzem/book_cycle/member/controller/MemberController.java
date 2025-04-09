@@ -150,7 +150,7 @@ public class MemberController {
     // 반납하기
     @PostMapping("/return")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<RentalHistoryResponseDTO> returnMyRental(
+    public ResponseEntity<GroupReturnResponseDTO> returnMyRental(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody RentalRequestDTO requestDTO){
         // 대여도서 조회
@@ -160,10 +160,11 @@ public class MemberController {
         RentalHistory rentalHistory = rentalHistoryRepository
                 .findByRentalBookAndMember(rentalBook, userDetails.getMember())
                 .orElseThrow(() -> new RentalException(RENTAL_HISTORY_NOT_FOUND));
-        RentalHistoryResponseDTO rentalHistoryResponseDTO = rentalService.returnRental(
-                userDetails.getMember(), requestDTO.getPayment(), rentalHistory);
+        GroupReturnResponseDTO returnResponseDTO = rentalService.returnRental(
+                rentalHistory.getOrder().getId(),
+                userDetails.getMember(), requestDTO.getPayment());
 
-        return ResponseEntity.ok(rentalHistoryResponseDTO);
+        return ResponseEntity.ok(returnResponseDTO);
     }
 
     // 결제 대기 취소

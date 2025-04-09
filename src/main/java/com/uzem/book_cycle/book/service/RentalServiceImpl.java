@@ -2,6 +2,7 @@ package com.uzem.book_cycle.book.service;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
+import com.uzem.book_cycle.book.dto.GroupReturnResponseDTO;
 import com.uzem.book_cycle.book.dto.RentalHistoryResponseDTO;
 import com.uzem.book_cycle.book.dto.RentalResponseDTO;
 import com.uzem.book_cycle.book.dto.ReservationResponseDTO;
@@ -12,6 +13,7 @@ import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +40,9 @@ public class RentalServiceImpl implements RentalService {
     private final ReservationRepository reservationRepository;
     private final PaymentService paymentService;
 
-    public void createRentalHistory(RentalBook rentalBook, Member member, LocalDate now) {
-        RentalHistory rentalHistory = RentalHistory.from(rentalBook, member, now);
+    public void createRentalHistory(RentalBook rentalBook, Member member,
+                                    Order order, LocalDate now) {
+        RentalHistory rentalHistory = RentalHistory.from(rentalBook, member, order, now);
         rentalHistoryRepository.save(rentalHistory);
     }
 
@@ -120,26 +123,53 @@ public class RentalServiceImpl implements RentalService {
 
     // 반납하기
     @Transactional
-    public RentalHistoryResponseDTO returnRental(Member member,
-                                          PaymentRequestDTO payment,
-                                          RentalHistory rentalHistory) {
-        if(rentalHistory.getRentalStatus() == RENTED) { // rented 상태
-            updateReturned(rentalHistory, member);
-        } else{ // overdue(연체) 상태
+    public GroupReturnResponseDTO returnRental(Long orderId, Member member,
+                                               PaymentRequestDTO payment) {
+        List<RentalHistory> rentalHistories = rentalHistoryRepository.findAllByOrderId(orderId);
+
+        // 반납도서상태 검증
+        RentalStatus rentalStatus = validGroupRentalStatus(rentalHistories);
+
+        if(rentalStatus== RENTED){
+            returnAllRentals(member, rentalHistories);
+        } else{ // 연체 상태
+            long totalOverdueFee = rentalHistories.stream()
+                    .mapToLong(RentalHistory::getOverdueFee)
+                    .sum();
+            payment.updateTotalOverdueAmount(totalOverdueFee); // 연체료 합산
             paymentService.processPayment(payment); // 결제 승인
+            returnAllRentals(member, rentalHistories); //
+        }
+
+        for(RentalHistory rentalHistory : rentalHistories){
+            RentalBook rentalBook = rentalHistory.getRentalBook();
+            if(rentalBook.getReservation()!= null) { // 예약자 있음
+                rentalBook.updatePendingPayment(); // pending_payment(결제대기)
+                rentalBook.getReservation().updatePaymentDeadline(
+                        LocalDate.now().plusDays(1)); // 결제대기기한 설정
+            } else{
+                rentalBook.updateAvailable(); // 대여가능 변경
+            }
+        }
+
+        return GroupReturnResponseDTO.from(rentalHistories, payment);
+    }
+
+    private static RentalStatus validGroupRentalStatus(List<RentalHistory> rentalHistories) {
+        System.out.println("rentalHistories = " + rentalHistories);
+        RentalStatus rentalStatus = rentalHistories.get(0).getRentalStatus();
+        boolean status = rentalHistories.stream() // rented or overdue
+                .allMatch(history -> history.getRentalStatus() == rentalStatus);
+        if(!status){ // 묶음대여도서 상태 불일치
+            throw new RentalException(RENTAL_HISTORY_STATUS_MISMATCH);
+        }
+        return rentalStatus;
+    }
+
+    private void returnAllRentals(Member member, List<RentalHistory> rentalHistories) {
+        for(RentalHistory rentalHistory : rentalHistories){
             updateReturned(rentalHistory, member);
         }
-
-        RentalBook rentalBook = rentalHistory.getRentalBook();
-        if(rentalBook.getReservation()!= null) { // 예약자 있음
-            rentalBook.updatePendingPayment(); // pending_payment(결제대기)
-            rentalBook.getReservation().updatePaymentDeadline(
-                    LocalDate.now().plusDays(1)); // 결제대기기한 설정
-        } else{
-            rentalBook.updateAvailable(); // 대여가능 변경
-        }
-
-        return RentalHistoryResponseDTO.from(rentalHistory);
     }
 
     // 반납 상태 변경

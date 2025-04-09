@@ -4,6 +4,7 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -48,7 +49,12 @@ public class RentalHistory extends BaseEntity {
     @Column(nullable = false)
     private boolean isOverduePayment; // 연체료 결제 연부
 
-    public static RentalHistory from(RentalBook rentalBook, Member member, LocalDate now) {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_Id")
+    private Order order;
+
+    public static RentalHistory from(RentalBook rentalBook, Member member,
+                                     Order order, LocalDate now) {
         return RentalHistory.builder()
                 .member(member)
                 .rentalBook(rentalBook)
@@ -59,6 +65,7 @@ public class RentalHistory extends BaseEntity {
                 .overdueFee(0L)
                 .rentalStatus(RENTED)
                 .isOverduePayment(false)
+                .order(order)
                 .build();
     }
 

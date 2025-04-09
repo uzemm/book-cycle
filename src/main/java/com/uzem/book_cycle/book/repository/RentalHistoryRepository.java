@@ -16,4 +16,5 @@ public interface RentalHistoryRepository extends JpaRepository<RentalHistory, Lo
     List<RentalHistory> findAllByRentalStatus(RentalStatus rentalStatus);
     List<RentalHistory> findAllByRentalStatusAndMember(RentalStatus rentalStatus, Member member);
     Optional<RentalHistory> findByRentalBookAndMember(RentalBook rentalBook, Member member);
+    List<RentalHistory> findAllByOrderId(Long orderId);
 }

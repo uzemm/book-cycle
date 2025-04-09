@@ -24,4 +24,8 @@ public class PaymentRequestDTO {
     @JsonProperty("orderId")
     private String tossOrderId;
 
+    // 연체료 합
+    public void updateTotalOverdueAmount(Long amount) {
+        this.amount = amount;
+    }
 }
