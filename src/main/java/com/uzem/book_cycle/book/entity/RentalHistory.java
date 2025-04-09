@@ -13,8 +13,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
-import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
-import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
+import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -47,7 +46,7 @@ public class RentalHistory extends BaseEntity {
     private RentalStatus rentalStatus;
 
     @Column(nullable = false)
-    private boolean isOverduePayment; // // 최종 결제 여부 (14일 초과 시 책 정가 결제)
+    private boolean isOverduePayment; // 연체료 결제 연부
 
     public static RentalHistory from(RentalBook rentalBook, Member member, LocalDate now) {
         return RentalHistory.builder()
@@ -63,7 +62,28 @@ public class RentalHistory extends BaseEntity {
                 .build();
     }
 
-    public void statusOverdue(){
+    public void statusOverdue(){ // rented -> overdue 변경
         this.rentalStatus = OVERDUE;
     }
+
+    public void setOverdueFee(Long overdueFee) {
+        this.overdueFee = overdueFee;
+    }
+
+    public void updateReturned(LocalDate actualReturnDate) { // 반납처리
+        this.actualReturnDate = actualReturnDate;
+        this.isOverduePayment = false;
+        this.rentalStatus = RETURNED;
+    }
+
+    public void updateOverdueReturned(){ // 연체반납처리
+        this.actualReturnDate = LocalDate.now();
+        this.isOverduePayment = true;
+        this.rentalStatus = RETURNED;
+    }
+
+    public void setMember(Member member) {
+        this.member = member;
+    }
+
 }
