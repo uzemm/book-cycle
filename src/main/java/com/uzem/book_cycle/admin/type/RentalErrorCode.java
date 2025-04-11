@@ -15,7 +15,8 @@ public enum RentalErrorCode implements ErrorCode {
     RESERVATION_NOT_FOUND("예약 도서를 찾을 수 없습니다."),
     RENTAL_HISTORY_NOT_FOUND("대여 이력을 찾을 수 없습니다."),
     CANNOT_CANCEL_PENDING_PAYMENT("결제 대기 상태 예약은 취소할 수 없습니다. "),
-    RENTAL_HISTORY_STATUS_MISMATCH("묶음 반납 도서의 상태가 일치하지 않습니다.")
+    RENTAL_HISTORY_STATUS_MISMATCH("묶음 반납 도서의 상태가 일치하지 않습니다."),
+    INVALID_RENTAL_STATUS("대여상태가 일치하지 않습니다.")
     ;
 
     private String description;
