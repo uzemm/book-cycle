@@ -1,6 +1,7 @@
 package com.uzem.book_cycle.book.service;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.GroupReturnResponseDTO;
 import com.uzem.book_cycle.book.dto.RentalHistoryResponseDTO;
 import com.uzem.book_cycle.book.entity.RentalHistory;
@@ -11,6 +12,8 @@ import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
+import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+import static com.uzem.book_cycle.payment.type.PaymentPurpose.OVERDUE;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +50,9 @@ class RentalServiceImplTest {
 
     @Mock
     private PaymentService paymentService;
+
+    @Mock
+    private PaymentRepository paymentRepository;
 
     @InjectMocks
     private RentalServiceImpl rentalService;
@@ -94,7 +101,7 @@ class RentalServiceImplTest {
         rentalService.updateStatusOverdue();
 
         //then
-        assertThat(rentalHistory.getRentalStatus()).isEqualTo(OVERDUE);
+        assertThat(rentalHistory.getRentalStatus()).isEqualTo(RentalStatus.OVERDUE);
         assertThat(rentalHistory.getOverdueFee()).isEqualTo(6000L);
         verify(overduePolicy, times(1)).calculateOverdue(rentalHistory, 6);
     }
@@ -166,7 +173,8 @@ class RentalServiceImplTest {
     void successReturnOverdueRental(){
         //given
         Member member = createMember();
-        PaymentRequestDTO payment = getPaymentRequestDTO();
+        PaymentRequestDTO paymentRequestDTO = getPaymentRequestDTO();
+        PaymentResponseDTO paymentResponseDTO = getPaymentResponseDTO();
         RentalBook rentalBook1 = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
@@ -182,13 +190,15 @@ class RentalServiceImplTest {
                 .build();
         RentalHistory rentalHistory1 = getRentalHistory(order, rentalBook1, member);
         RentalHistory rentalHistory2 = getRentalHistory(order, rentalBook2, member);
+        List<RentalHistory> rentalHistories = List.of(rentalHistory1, rentalHistory2);
+
         given(rentalHistoryRepository.findAllByOrderId(order.getId()))
                 .willReturn(List.of(rentalHistory1, rentalHistory2));
-        List<RentalHistory> rentalHistories = List.of(rentalHistory1, rentalHistory2);
+        given(paymentService.processOverduePayment(paymentRequestDTO)).willReturn(paymentResponseDTO);
 
         //when
         GroupReturnResponseDTO groupReturnResponseDTO = rentalService.returnRental(
-                rentalHistories.get(0).getOrder().getId(), member, payment);
+                rentalHistories.get(0).getOrder().getId(), member, paymentRequestDTO);
 
         //then
         assertThat(groupReturnResponseDTO).isNotNull();
@@ -204,17 +214,17 @@ class RentalServiceImplTest {
         assertThat(rentalBook1.getRentalStatus()).isEqualTo(AVAILABLE);
         assertThat(rentalBook1.getReservation()).isNull();
 
-        assertThat(payment.getAmount()).isEqualTo(2000L);
+        assertThat(paymentRequestDTO.getAmount()).isEqualTo(2000L);
         assertThat(member.getRentalCnt()).isEqualTo(0);
 
-        verify(paymentService, times(1)).processPayment(any(PaymentRequestDTO.class));
+        verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
     }
 
     private static RentalHistory getRentalHistory(Order order, RentalBook rentalBook, Member member) {
         RentalHistory rentalHistory = RentalHistory.builder()
                 .rentalDate(LocalDate.now().minusDays(5))
                 .returnDate(LocalDate.now().plusDays(14))
-                .rentalStatus(OVERDUE)
+                .rentalStatus(RentalStatus.OVERDUE)
                 .rentalBook(rentalBook)
                 .member(member)
                 .order(order)
@@ -228,27 +238,32 @@ class RentalServiceImplTest {
     void successReturnOverdueRental_hasReservation(){
         //given
         Member member = createMember();
-        PaymentRequestDTO payment = getPaymentRequestDTO();
+        PaymentRequestDTO paymentRequestDTO = getPaymentRequestDTO();
+        PaymentResponseDTO paymentResponseDTO = getPaymentResponseDTO();
         Reservation reservation = Reservation.builder()
                 .member(member)
                 .paymentDeadline(null)
                 .build();
-        Order order = Order.builder()
-                .id(1L)
-                .build();
         RentalBook rentalBook = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(reservation)
-                .rentalStatus(OVERDUE)
+                .reservation(null)
+                .build();
+        Order order = Order.builder()
+                .id(1L)
                 .build();
         reservation.setRentalBook(rentalBook);
+
         RentalHistory rentalHistory = getRentalHistory(order, rentalBook, member);
-        given(rentalHistoryRepository.findAllByOrderId(order.getId())).willReturn(List.of(rentalHistory));
+        List<RentalHistory> rentalHistories = List.of(rentalHistory);
+
+        given(rentalHistoryRepository.findAllByOrderId(order.getId()))
+                .willReturn(List.of(rentalHistory));
+        given(paymentService.processOverduePayment(paymentRequestDTO)).willReturn(paymentResponseDTO);
 
         //when
         GroupReturnResponseDTO groupReturnResponseDTO = rentalService.returnRental(
-                rentalHistory.getOrder().getId(), member, payment);
+                rentalHistories.get(0).getOrder().getId(), member, paymentRequestDTO);
 
         //then
         RentalHistoryResponseDTO result = groupReturnResponseDTO.getRentalHistory().get(0);
@@ -260,7 +275,7 @@ class RentalServiceImplTest {
         assertThat(reservation.getPaymentDeadline()).isNotNull();
         assertThat(reservation.getPaymentDeadline()).isEqualTo(LocalDate.now().plusDays(1));
 
-        verify(paymentService, times(1)).processPayment(any(PaymentRequestDTO.class));
+        verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
     }
 
     private static Member createMember() {
@@ -273,6 +288,15 @@ class RentalServiceImplTest {
 
     private static PaymentRequestDTO getPaymentRequestDTO() {
         PaymentRequestDTO payment = PaymentRequestDTO.builder()
+                .amount(3000L)
+                .build();
+        return payment;
+    }
+
+    private static PaymentResponseDTO getPaymentResponseDTO() {
+        PaymentResponseDTO payment = PaymentResponseDTO.builder()
+                .amount(3000L)
+                .paymentPurpose(OVERDUE)
                 .build();
         return payment;
     }
