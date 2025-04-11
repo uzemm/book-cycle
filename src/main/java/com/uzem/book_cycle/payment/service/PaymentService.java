@@ -9,5 +9,5 @@ public interface PaymentService {
     PaymentResponseDTO processPayment(PaymentRequestDTO request);
     PaymentResponseDTO  processCancelPayment(CancelRequestDTO request);
     PaymentResponseDTO getPayment(String paymentKey);
-
+    PaymentResponseDTO processOverduePayment(PaymentRequestDTO request);
 }

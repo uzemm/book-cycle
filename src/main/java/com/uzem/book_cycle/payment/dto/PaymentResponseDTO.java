@@ -2,6 +2,7 @@ package com.uzem.book_cycle.payment.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.uzem.book_cycle.payment.entity.TossPayment;
+import com.uzem.book_cycle.payment.type.PaymentPurpose;
 import com.uzem.book_cycle.payment.type.PaymentStatus;
 import com.uzem.book_cycle.payment.type.PaymentType;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,8 @@ public class PaymentResponseDTO {
     private PaymentType type;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<CancelResponseDTO> cancels;
+    private PaymentPurpose paymentPurpose;
+
 
 
     public static PaymentResponseDTO from(TossPayment tossPayment) {
@@ -48,6 +51,7 @@ public class PaymentResponseDTO {
                 .type(tossPayment.getType())
                 .requestedAt(tossPayment.getRequestedAt())
                 .approvedAt(tossPayment.getApprovedAt())
+                .paymentPurpose(tossPayment.getPaymentPurpose())
                 .cancels(cancels)
                 .build();
     }
