@@ -13,6 +13,7 @@ import com.uzem.book_cycle.payment.entity.Cancel;
 import com.uzem.book_cycle.payment.entity.TossPayment;
 import com.uzem.book_cycle.payment.repository.CancelRepository;
 import com.uzem.book_cycle.payment.repository.PaymentRepository;
+import com.uzem.book_cycle.payment.type.PaymentPurpose;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 import static com.uzem.book_cycle.order.type.OrderErrorCode.ORDER_NOT_FOUND;
 import static com.uzem.book_cycle.payment.type.PaymentErrorCode.PAYMENT_NOT_FOUND;
 import static com.uzem.book_cycle.payment.type.PaymentErrorCode.TOSS_PAYMENT_REQUEST_FAILED;
+import static com.uzem.book_cycle.payment.type.PaymentPurpose.OVERDUE;
 import static com.uzem.book_cycle.payment.type.PaymentStatus.CANCELED;
 
 
@@ -53,6 +55,16 @@ public class PaymentServiceImpl implements PaymentService{
         Order order = findByTossOrderId(request.getTossOrderId());
         TossPayment tossPayment = createTossPayment(tossResponse, order);
         orderRepository.save(order);
+        paymentRepository.save(tossPayment);
+        return PaymentResponseDTO.from(tossPayment);
+    }
+
+    // 연체
+    @Transactional
+    public PaymentResponseDTO processOverduePayment(PaymentRequestDTO request) {
+        PaymentResponseDTO tossResponse = requestTossApi(request);
+        Order order = findByTossOrderId(request.getTossOrderId());
+        TossPayment tossPayment = createTossPayment(tossResponse, order, OVERDUE);
         paymentRepository.save(tossPayment);
         return PaymentResponseDTO.from(tossPayment);
     }
@@ -150,7 +162,7 @@ public class PaymentServiceImpl implements PaymentService{
 
     // TossPayment 생성
     private static TossPayment createTossPayment(PaymentResponseDTO tossResponse,
-                                              Order order) {
+                                                 Order order, PaymentPurpose paymentPurpose) {
         TossPayment tossPayment = TossPayment.builder()
                 .paymentKey(tossResponse.getPaymentKey())
                 .tossOrderId(tossResponse.getOrderId())
@@ -161,8 +173,15 @@ public class PaymentServiceImpl implements PaymentService{
                 .approvedAt(tossResponse.getApprovedAt())
                 .status(tossResponse.getStatus())
                 .type(tossResponse.getType())
+                .paymentPurpose(paymentPurpose)
                 .build();
         return tossPayment;
+    }
+
+    // 정상 반납 경우 - 결제 x
+    public static TossPayment createTossPayment(PaymentResponseDTO tossResponse,
+                                                 Order order) {
+        return createTossPayment(tossResponse, order, null);
     }
 
     // Cancel 생성
@@ -188,5 +207,12 @@ public class PaymentServiceImpl implements PaymentService{
         TossPayment tossPayment = paymentRepository.findByPaymentKey(paymentKey).orElseThrow(
                 () -> new PaymentException(PAYMENT_NOT_FOUND));
         return PaymentResponseDTO.from(tossPayment);
+    }
+
+    // 연체료 결제내역 조회
+    public PaymentResponseDTO getOverduePayment(Order order){
+        TossPayment payment = paymentRepository.findByOrderAndPaymentPurpose(order, OVERDUE).orElseThrow(
+                () -> new PaymentException(PAYMENT_NOT_FOUND));
+        return PaymentResponseDTO.from(payment);
     }
 }

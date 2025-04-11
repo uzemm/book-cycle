@@ -1,16 +1,17 @@
 package com.uzem.book_cycle.member.entity;
 
+import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.type.MemberStatus;
 import com.uzem.book_cycle.member.type.Role;
 import com.uzem.book_cycle.member.type.SocialType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.uzem.book_cycle.member.type.MemberErrorCode.INSUFFICIENT_POINTS;
 
@@ -59,6 +60,9 @@ public class Member extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SocialType socialType;
 
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RentalHistory> rentalHistories = new ArrayList<>();
+
     public void activateMember(){
 
         this.status = MemberStatus.ACTIVE;
@@ -93,4 +97,17 @@ public class Member extends BaseEntity {
         this.rentalCnt += 1;
     }
 
+    public void returnRentalCnt() {
+        this.rentalCnt = 0;
+    }
+
+    public void addRentalHistory(RentalHistory rentalHistory) {
+        rentalHistories.add(rentalHistory);
+        rentalHistory.setMember(this);
+    }
+
+    public void removeRentalHistory(RentalHistory rentalHistory) {
+        rentalHistories.remove(rentalHistory);
+        rentalHistory.setMember(null);
+    }
 }

@@ -4,8 +4,7 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.service.RentalService;
+import com.uzem.book_cycle.book.service.RentalServiceImpl;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.order.dto.OrderItemRequestDTO;
@@ -58,7 +57,7 @@ class OrderServiceImplTest {
     private PaymentService paymentService;
 
     @Mock
-    private RentalService rentalService;
+    private RentalServiceImpl rentalService;
 
     @InjectMocks
     private OrderServiceImpl orderService;
@@ -142,7 +141,12 @@ class OrderServiceImplTest {
         assertThat(member.getRentalCnt()).isEqualTo(1);
 
         verify(paymentService, times(1)).processPayment(payment);
-        verify(rentalService, times(1)).createRentalHistory(rentalBook, member, LocalDate.now());
+        verify(rentalService, times(1)).createRentalHistory(
+                eq(rentalBook),
+                eq(member),
+                any(Order.class),
+                any(LocalDate.class)
+        );
 
     }
 

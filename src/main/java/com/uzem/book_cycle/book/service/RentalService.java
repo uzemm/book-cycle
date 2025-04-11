@@ -1,23 +1,26 @@
 package com.uzem.book_cycle.book.service;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.dto.*;
 import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.member.entity.Member;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.uzem.book_cycle.order.entity.Order;
+import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 
 import java.time.LocalDate;
+import java.util.List;
 
+public interface RentalService {
+    void createRentalHistory(RentalBook rentalBook, Member member, Order order, LocalDate now);
+    long calculateOverdueFee(RentalHistory rentalHistory, LocalDate now);
+    ReservationResponseDTO createReservation(RentalBook rentalBook, Member member);
+    void cancelMyReservation(RentalBook rentalBook, Member member);
+    List<ReservationResponseDTO> getMyReservations(Member member);
+    GroupReturnResponseDTO returnRental(Long orderId, Member member,
+                                        PaymentRequestDTO payment);
+    RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Member member);
+    List<RentalHistoryResponseDTO> getMyRentals(Member member);
+    List<OverdueListResponseDTO> getMyOverdue(Member member);
+    List<RentalHistoryListResponseDTO> getMyRentalHistories(Member member);
 
-@Service
-@RequiredArgsConstructor
-public class RentalService {
-
-    private final RentalHistoryRepository rentalHistoryRepository;
-
-    public void createRentalHistory(RentalBook rentalBook, Member member, LocalDate now) {
-        RentalHistory rentalHistory = RentalHistory.from(rentalBook, member, now);
-        rentalHistoryRepository.save(rentalHistory);
-    }
 }

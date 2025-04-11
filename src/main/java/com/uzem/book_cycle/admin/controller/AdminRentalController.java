@@ -2,6 +2,7 @@ package com.uzem.book_cycle.admin.controller;
 
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
+import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.service.AdminRentalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,10 +18,10 @@ public class AdminRentalController {
     private final AdminRentalService rentalService;
 
     @PostMapping
-    public ResponseEntity<String> createRentalBook(
+    public ResponseEntity<Long> createRentalBook(
             @RequestBody @Valid AdminRentalRequestDTO request){
-        rentalService.createRentalBook(request);
-        return ResponseEntity.ok("대여 도서 등록 완료");
+        RentalBook rentalBook = rentalService.createRentalBook(request);
+        return ResponseEntity.ok(rentalBook.getId());
     }
 
     @PatchMapping("/{rentalId}")

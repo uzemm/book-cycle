@@ -15,6 +15,6 @@ public class SalesException extends RuntimeException {
 
     public SalesException(SalesErrorCode salesErrorCode) {
         this.salesErrorCode = salesErrorCode;
-        this.errorMessage = salesErrorCode.getDescription();
+        this.errorMessage = salesErrorCode.getMessage();
     }
 }

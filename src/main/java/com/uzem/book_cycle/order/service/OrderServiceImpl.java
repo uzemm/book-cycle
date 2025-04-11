@@ -4,7 +4,8 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
-import com.uzem.book_cycle.book.service.RentalService;
+import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.book.service.RentalServiceImpl;
 import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.exception.SalesException;
@@ -43,7 +44,8 @@ public class OrderServiceImpl implements OrderService{
     private final SalesRepository salesRepository;
     private final AdminRentalRepository rentalRepository;
     private final PaymentService paymentService;
-    private final RentalService rentalService;
+    private final RentalServiceImpl rentalService;
+    private final ReservationRepository reservationRepository;
 
     private static final double REWARD_POINT = 0.01;
 
@@ -59,7 +61,7 @@ public class OrderServiceImpl implements OrderService{
 
         // 판매, 대여 도서 상태 변경 및 저장
         List<OrderItem> orderItems = order.getOrderItems();
-        updateOrderItems(orderItems, member, now);
+        updateOrderItems(orderItems, member, order, now);
 
         // 응답 DTO 변환 후 반환
         return OrderResponseDTO.from(order);
@@ -78,7 +80,7 @@ public class OrderServiceImpl implements OrderService{
         checkDuplicateOrder(order.getTossOrderId()); // 중복 주문 확인
 
         // 3. 주문 항목 생성
-        List<OrderItem> orderItems = getOrderItems(requestDTO, order);
+        List<OrderItem> orderItems = getOrderItems(requestDTO, order, member);
         orderItems.forEach(order::addOrderItem); // 양방향 연결
         order.setOrderName(Order.createOrderName(order.getOrderItems())); // OrderName 설정
 
@@ -108,22 +110,25 @@ public class OrderServiceImpl implements OrderService{
 
     // 판매, 도서 상태 변경 및 저장
     @Transactional
-    public void updateOrderItems(List<OrderItem> orderItems, Member member, LocalDate now) {
+    public void updateOrderItems(List<OrderItem> orderItems, Member member, Order order, LocalDate now) {
         updateAndSaveSalesBook(orderItems);
-        updateAndSaveRentalBook(orderItems, member, now);
+        updateAndSaveRentalBook(orderItems, member, order, now);
     }
 
     public void updateAndSaveRentalBook(List<OrderItem> orderItems,
                                          Member member,
-                                         LocalDate now) {
+                                        Order order, LocalDate now) {
         List<RentalBook> rentalBooks = orderItems.stream()
                 .filter(item -> item.getItemType() == RENTAL)
                 .map(OrderItem::getRentalBook)
                 .collect(Collectors.toList());
 
         rentalBooks.forEach(rental -> {
-            rental.rentalStatusRented();
-            rentalService.createRentalHistory(rental, member, now);
+            rental.rentalStatusRented(); // 대여상태 변경
+            rentalService.createRentalHistory(rental, member, order, now); // 대여 이력 생성
+            if(rental.getReservation() != null){
+                reservationRepository.deleteByRentalBook(rental); // 확정 예약 삭제
+            }
             member.rentalCnt(); // 대여 권수 ++
         });
 
@@ -140,7 +145,7 @@ public class OrderServiceImpl implements OrderService{
     }
 
     // 주문 도서
-    private List<OrderItem> getOrderItems(OrderRequestDTO requestDTO, Order order) {
+    private List<OrderItem> getOrderItems(OrderRequestDTO requestDTO, Order order, Member member) {
         List<OrderItem> orderItems = requestDTO.getOrderItems().stream() //OrderItem 생성
                 .map(item -> {
                     if (item.getItemType() == SALE) {
@@ -151,7 +156,7 @@ public class OrderServiceImpl implements OrderService{
                     } else {
                         RentalBook rentalBook = rentalRepository.findById(item.getBookId())
                                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
-                        validateRentalBookStatus(rentalBook);
+                        validateRentalBookStatus(rentalBook, member);
                         return OrderItem.from(item, order, null, rentalBook);
                     }
                 }).collect(Collectors.toList());
@@ -164,12 +169,13 @@ public class OrderServiceImpl implements OrderService{
         }
     }
 
-    private static void validateRentalBookStatus(RentalBook rentalBook) {
+    private static void validateRentalBookStatus(RentalBook rentalBook, Member member) {
         if(rentalBook.getRentalStatus() == RENTED){ // 대여중
             throw new RentalException(ALREADY_RENTED);
         } else if(rentalBook.getRentalStatus() == OVERDUE){ // 연체중
             throw new RentalException(OVERDUE_RENTAL_BOOK);
-        } else if(rentalBook.getRentalStatus() == PENDING_PAYMENT){ // 결제 대기중
+        } else if(rentalBook.getRentalStatus() == PENDING_PAYMENT &&
+        !rentalBook.getReservation().getMember().equals(member)){ // 결제 대기중
             throw new RentalException(PENDING_PAYMENT_RENTAL_BOOK);
         }
     }

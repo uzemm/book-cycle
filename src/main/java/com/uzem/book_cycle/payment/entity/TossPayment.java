@@ -2,6 +2,7 @@ package com.uzem.book_cycle.payment.entity;
 
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.payment.type.PaymentPurpose;
 import com.uzem.book_cycle.payment.type.PaymentStatus;
 import com.uzem.book_cycle.payment.type.PaymentType;
 import jakarta.persistence.*;
@@ -53,6 +54,8 @@ public class TossPayment{
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
     private List<Cancel> cancels = new ArrayList<>();
+
+    private PaymentPurpose paymentPurpose;
 
     public static TossPayment from(PaymentRequestDTO request, Order order) {
         return TossPayment.builder()
