@@ -208,4 +208,11 @@ public class PaymentServiceImpl implements PaymentService{
                 () -> new PaymentException(PAYMENT_NOT_FOUND));
         return PaymentResponseDTO.from(tossPayment);
     }
+
+    // 연체료 결제내역 조회
+    public PaymentResponseDTO getOverduePayment(Order order){
+        TossPayment payment = paymentRepository.findByOrderAndPaymentPurpose(order, OVERDUE).orElseThrow(
+                () -> new PaymentException(PAYMENT_NOT_FOUND));
+        return PaymentResponseDTO.from(payment);
+    }
 }
