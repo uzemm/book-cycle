@@ -3,6 +3,8 @@ package com.uzem.book_cycle.book.service;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.GroupReturnResponseDTO;
+import com.uzem.book_cycle.book.dto.OverdueListResponseDTO;
+import com.uzem.book_cycle.book.dto.RentalHistoryListResponseDTO;
 import com.uzem.book_cycle.book.dto.RentalHistoryResponseDTO;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
@@ -15,6 +17,7 @@ import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import com.uzem.book_cycle.payment.service.PaymentService;
+import com.uzem.book_cycle.payment.type.PaymentPurpose;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +30,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
-import static com.uzem.book_cycle.payment.type.PaymentPurpose.OVERDUE;
+import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -278,6 +281,120 @@ class RentalServiceImplTest {
         verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
     }
 
+    @Test
+    @DisplayName("대여현황조회 성공")
+    void getMyRentals(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = RentalBook.builder()
+                .title("대여용 도서")
+                .price(1000L)
+                .reservation(null)
+                .build();
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        RentalHistory rentalHistory = getRentalHistoryRented(order, rentalBook, member);
+
+        given(rentalHistoryRepository.findAllByRentalStatusAndMemberOrderByReturnDateAsc(RENTED, member))
+                .willReturn(List.of(rentalHistory));
+
+        //when
+        List<RentalHistoryResponseDTO> myRentals = rentalService.getMyRentals(member);
+
+        //then
+        assertThat(myRentals).isNotNull();
+        assertThat(myRentals.size()).isEqualTo(1);
+        assertThat(myRentals.get(0).getRentalStatus()).isEqualTo(RENTED);
+        assertThat(myRentals.get(0).getOrderId()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("연체현황조회 성공")
+    void getMyOverdue(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = RentalBook.builder()
+                .title("대여용 도서")
+                .price(1000L)
+                .reservation(null)
+                .build();
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        RentalHistory rentalHistory = getRentalHistory(order, rentalBook, member);
+
+        given(rentalHistoryRepository.findAllByRentalStatusAndMemberOrderByReturnDateAsc(OVERDUE, member))
+                .willReturn(List.of(rentalHistory));
+
+        //when
+        List<OverdueListResponseDTO> myOverdue = rentalService.getMyOverdue(member);
+
+        //then
+        assertThat(myOverdue).isNotNull();
+        assertThat(myOverdue.get(0).getOrderId()).isEqualTo(1);
+        assertThat(myOverdue.get(0).getCount()).isEqualTo(1);
+        assertThat(myOverdue.get(0).getTotalOverdueFee()).isEqualTo(1000);
+    }
+
+    @Test
+    @DisplayName("대여이력조회 성공")
+    void getMyRentalHistories(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = RentalBook.builder()
+                .title("대여용 도서")
+                .price(1000L)
+                .reservation(null)
+                .build();
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        PaymentResponseDTO paymentResponseDTO = getPaymentResponseDTO();
+        RentalHistory rentalHistory = getRentalHistoryReturned(order, rentalBook, member);
+
+        given(rentalHistoryRepository.findAllByRentalStatusAndMemberOrderByReturnDateAsc(RETURNED, member))
+                .willReturn(List.of(rentalHistory));
+        given(paymentService.getOverduePayment(rentalHistory.getOrder())).willReturn(paymentResponseDTO);
+
+        //when
+        List<RentalHistoryListResponseDTO> myRentalHistories = rentalService.getMyRentalHistories(member);
+
+        //then
+        assertThat(myRentalHistories).isNotNull();
+        assertThat(myRentalHistories.get(0).getOrderId()).isNotNull();
+        assertThat(myRentalHistories.get(0).getCount()).isEqualTo(1);
+        assertThat(myRentalHistories.get(0).getTotalOverdueFee()).isEqualTo(3000);
+        assertThat(myRentalHistories.get(0).getRentalHistoryList().get(0).getPayment()).isNotNull();
+    }
+
+    private static RentalHistory getRentalHistoryRented(Order order, RentalBook rentalBook, Member member) {
+        RentalHistory rentalHistory = RentalHistory.builder()
+                .rentalDate(LocalDate.now().minusDays(5))
+                .returnDate(LocalDate.now().plusDays(14))
+                .rentalStatus(RENTED)
+                .rentalBook(rentalBook)
+                .member(member)
+                .order(order)
+                .overdueFee(1000L)
+                .build();
+        return rentalHistory;
+    }
+
+    private static RentalHistory getRentalHistoryReturned(Order order, RentalBook rentalBook, Member member) {
+        RentalHistory rentalHistory = RentalHistory.builder()
+                .rentalDate(LocalDate.now().minusDays(5))
+                .returnDate(LocalDate.now().plusDays(14))
+                .rentalStatus(RETURNED)
+                .rentalBook(rentalBook)
+                .member(member)
+                .order(order)
+                .overdueFee(1000L)
+                .isOverduePayment(true)
+                .build();
+        return rentalHistory;
+    }
+
     private static Member createMember() {
         Member member = Member.builder()
                 .id(1L)
@@ -296,7 +413,7 @@ class RentalServiceImplTest {
     private static PaymentResponseDTO getPaymentResponseDTO() {
         PaymentResponseDTO payment = PaymentResponseDTO.builder()
                 .amount(3000L)
-                .paymentPurpose(OVERDUE)
+                .paymentPurpose(PaymentPurpose.OVERDUE)
                 .build();
         return payment;
     }
