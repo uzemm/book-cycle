@@ -2,6 +2,7 @@ package com.uzem.book_cycle.book.dto;
 
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,23 +16,36 @@ import java.time.LocalDate;
 @Builder
 public class RentalHistoryResponseDTO {
 
-    private Long rentalId;
     private Long rentalBookId;
-    private Long memberId;
     private LocalDate rentalDate;
     private LocalDate returnDate;
     private LocalDate actualReturnDate;
     private RentalStatus rentalStatus;
+    private Long orderId;
+    private PaymentResponseDTO payment;
 
-    public static RentalHistoryResponseDTO from(RentalHistory rentalHistory) {
+    // 연체료 결제 시
+    public static RentalHistoryResponseDTO from(RentalHistory rentalHistory, PaymentResponseDTO payment) {
         return RentalHistoryResponseDTO.builder()
-                .rentalId(rentalHistory.getId())
                 .rentalBookId(rentalHistory.getRentalBook().getId())
-                .memberId(rentalHistory.getMember().getId())
                 .rentalDate(rentalHistory.getRentalDate())
                 .returnDate(rentalHistory.getReturnDate())
                 .actualReturnDate(rentalHistory.getActualReturnDate())
                 .rentalStatus(rentalHistory.getRentalStatus())
+                .orderId(rentalHistory.getOrder().getId())
+                .payment(payment)
+                .build();
+    }
+
+    // 결제 x
+    public static RentalHistoryResponseDTO from(RentalHistory rentalHistory) {
+        return RentalHistoryResponseDTO.builder()
+                .rentalBookId(rentalHistory.getRentalBook().getId())
+                .rentalDate(rentalHistory.getRentalDate())
+                .returnDate(rentalHistory.getReturnDate())
+                .actualReturnDate(rentalHistory.getActualReturnDate())
+                .rentalStatus(rentalHistory.getRentalStatus())
+                .orderId(rentalHistory.getOrder().getId())
                 .build();
     }
 }

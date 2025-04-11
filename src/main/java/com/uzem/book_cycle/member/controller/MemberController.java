@@ -3,7 +3,6 @@ package com.uzem.book_cycle.member.controller;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.book.dto.*;
-import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.service.RentalService;
 import com.uzem.book_cycle.exception.RentalException;
@@ -131,37 +130,32 @@ public class MemberController {
     // 연체 도서 조회
     @GetMapping("/overdues")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<RentalHistoryResponseDTO>> getMyOverdues(
+    public ResponseEntity<List<OverdueListResponseDTO>> getMyOverdues(
             @AuthenticationPrincipal CustomUserDetails userDetails){
-        List<RentalHistoryResponseDTO> myOverdue = rentalService.getMyOverdue(userDetails.getMember());
+        List<OverdueListResponseDTO> myOverdue = rentalService.getMyOverdue(userDetails.getMember());
         return ResponseEntity.ok(myOverdue);
     }
 
     // 대여 이력 조회
     @GetMapping("/rental-histories")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<RentalHistoryResponseDTO>> getMyRentalHistories(
+    public ResponseEntity<List<RentalHistoryListResponseDTO>> getMyRentalHistories(
             @AuthenticationPrincipal CustomUserDetails userDetails){
-        List<RentalHistoryResponseDTO> myRentalHistories =
+        List<RentalHistoryListResponseDTO> myRentalHistories =
                 rentalService.getMyRentalHistories(userDetails.getMember());
         return ResponseEntity.ok(myRentalHistories);
     }
 
     // 반납하기
-    @PostMapping("/return")
+    @PostMapping("/return/{orderId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GroupReturnResponseDTO> returnMyRental(
             @AuthenticationPrincipal CustomUserDetails userDetails,
-            @RequestBody RentalRequestDTO requestDTO){
-        // 대여도서 조회
-        RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
-                .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
-        // 대여이력 조회
-        RentalHistory rentalHistory = rentalHistoryRepository
-                .findByRentalBookAndMember(rentalBook, userDetails.getMember())
-                .orElseThrow(() -> new RentalException(RENTAL_HISTORY_NOT_FOUND));
+            @RequestBody RentalRequestDTO requestDTO,
+            @PathVariable Long orderId){
+
         GroupReturnResponseDTO returnResponseDTO = rentalService.returnRental(
-                rentalHistory.getOrder().getId(),
+                orderId,
                 userDetails.getMember(), requestDTO.getPayment());
 
         return ResponseEntity.ok(returnResponseDTO);

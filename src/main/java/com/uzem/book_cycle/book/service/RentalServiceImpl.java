@@ -2,19 +2,20 @@ package com.uzem.book_cycle.book.service;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.dto.GroupReturnResponseDTO;
-import com.uzem.book_cycle.book.dto.RentalHistoryResponseDTO;
-import com.uzem.book_cycle.book.dto.RentalResponseDTO;
-import com.uzem.book_cycle.book.dto.ReservationResponseDTO;
+import com.uzem.book_cycle.book.dto.*;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.policy.OverduePolicy;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.exception.PaymentException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
+import com.uzem.book_cycle.payment.entity.TossPayment;
+import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,10 +26,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+import static com.uzem.book_cycle.payment.type.PaymentErrorCode.PAYMENT_NOT_FOUND;
+import static com.uzem.book_cycle.payment.type.PaymentPurpose.OVERDUE;
 
 @Slf4j
 @Service
@@ -39,7 +43,9 @@ public class RentalServiceImpl implements RentalService {
     private final OverduePolicy overduePolicy;
     private final ReservationRepository reservationRepository;
     private final PaymentService paymentService;
+    private final PaymentRepository paymentRepository;
 
+    // 대여 이력 생성
     public void createRentalHistory(RentalBook rentalBook, Member member,
                                     Order order, LocalDate now) {
         RentalHistory rentalHistory = RentalHistory.from(rentalBook, member, order, now);
@@ -113,7 +119,7 @@ public class RentalServiceImpl implements RentalService {
                 rentalBook, member).orElseThrow(
                 () -> new RentalException(RESERVATION_NOT_FOUND));
         RentalStatus rentalStatus = reservation.getRentalBook().getRentalStatus();
-        if(rentalStatus == RENTED || rentalStatus == OVERDUE){
+        if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){
             reservation.deleteRentalBook(); // 연관관계 끊기
             reservationRepository.delete(reservation);
         } else{
@@ -127,24 +133,11 @@ public class RentalServiceImpl implements RentalService {
                                                PaymentRequestDTO payment) {
         List<RentalHistory> rentalHistories = rentalHistoryRepository.findAllByOrderId(orderId);
 
-        // 반납도서상태 검증
-        RentalStatus rentalStatus = validGroupRentalStatus(rentalHistories);
-
-        if(rentalStatus== RENTED){
-            returnAllRentals(member, rentalHistories);
-        } else{ // 연체 상태
-            long totalOverdueFee = rentalHistories.stream()
-                    .mapToLong(RentalHistory::getOverdueFee)
-                    .sum();
-            payment.updateTotalOverdueAmount(totalOverdueFee); // 연체료 합산
-            paymentService.processPayment(payment); // 결제 승인
-            returnAllRentals(member, rentalHistories); //
-        }
-
+        // 반납 처리 전 도서 상태 변경
         for(RentalHistory rentalHistory : rentalHistories){
             RentalBook rentalBook = rentalHistory.getRentalBook();
             if(rentalBook.getReservation()!= null) { // 예약자 있음
-                rentalBook.updatePendingPayment(); // pending_payment(결제대기)
+                rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
                 rentalBook.getReservation().updatePaymentDeadline(
                         LocalDate.now().plusDays(1)); // 결제대기기한 설정
             } else{
@@ -152,11 +145,31 @@ public class RentalServiceImpl implements RentalService {
             }
         }
 
-        return GroupReturnResponseDTO.from(rentalHistories, payment);
+        // 반납도서상태 검증
+        RentalStatus rentalStatus = validGroupRentalStatus(rentalHistories);
+        if(rentalStatus == RENTED){
+            returnAllRentals(member, rentalHistories); // 반납처리
+            return GroupReturnResponseDTO.from(rentalHistories, null);
+        } else{ // 연체 상태
+            long totalOverdueFee = rentalHistories.stream()
+                    .mapToLong(RentalHistory::getOverdueFee)
+                    .sum(); // 연체료 합산
+            payment.updateTotalOverdueAmount(totalOverdueFee);
+            PaymentResponseDTO paymentResponseDTO = paymentService.processOverduePayment(payment);// 결제 승인
+            returnAllRentals(member, rentalHistories); // 반납 처리
+
+            // 결제 후 rentalHistoryResponseList 생성
+            List<RentalHistoryResponseDTO> rentalHistoryResponseList = rentalHistories.stream()
+                    .map(history -> RentalHistoryResponseDTO
+                            .from(history, paymentResponseDTO)) // 결제 응답 넣어줌
+                    .collect(Collectors.toList());
+
+            return GroupReturnResponseDTO.fromHistoryResponse(rentalHistoryResponseList, paymentResponseDTO);
+        }
+
     }
 
     private static RentalStatus validGroupRentalStatus(List<RentalHistory> rentalHistories) {
-        System.out.println("rentalHistories = " + rentalHistories);
         RentalStatus rentalStatus = rentalHistories.get(0).getRentalStatus();
         boolean status = rentalHistories.stream() // rented or overdue
                 .allMatch(history -> history.getRentalStatus() == rentalStatus);
@@ -230,7 +243,7 @@ public class RentalServiceImpl implements RentalService {
     @Override
     public List<RentalHistoryResponseDTO> getMyRentals(Member member) {
         List<RentalHistory> rentalHistories = rentalHistoryRepository.
-                findAllByRentalStatusAndMember(RENTED, member);
+                findAllByRentalStatusAndMemberOrderByReturnDateAsc(RENTED, member);
 
         return rentalHistories.stream()
                 .map(RentalHistoryResponseDTO::from)
@@ -239,23 +252,50 @@ public class RentalServiceImpl implements RentalService {
 
     // 연체 조회
     @Override
-    public List<RentalHistoryResponseDTO> getMyOverdue(Member member) {
+    public List<OverdueListResponseDTO> getMyOverdue(Member member) {
+        // 연체도서 조회
         List<RentalHistory> rentalHistories = rentalHistoryRepository.
-                findAllByRentalStatusAndMember(OVERDUE, member);
+                findAllByRentalStatusAndMemberOrderByReturnDateAsc(RentalStatus.OVERDUE, member);
 
-        return rentalHistories.stream()
-                .map(RentalHistoryResponseDTO::from)
+        // 연체 이력 리스트 → OverdueDetailDTO 변환
+        List<OverdueDetailDTO> detail = rentalHistories.stream()
+                .map(OverdueDetailDTO::from)
+                .collect(Collectors.toList());
+
+        // 주문단위로 묶음
+        Map<Long, List<OverdueDetailDTO>> list = detail.stream()
+                .collect(Collectors.groupingBy(OverdueDetailDTO::getOrderId));
+
+        return list.values().stream()
+                .map(OverdueListResponseDTO::from)
                 .collect(Collectors.toList());
     }
 
     // 대여이력 조회
     @Override
-    public List<RentalHistoryResponseDTO> getMyRentalHistories(Member member) {
+    public List<RentalHistoryListResponseDTO> getMyRentalHistories(Member member) {
+        // 대여이력 조회
         List<RentalHistory> rentalHistories = rentalHistoryRepository.
-                findAllByRentalStatusAndMember(RETURNED, member);
-
-        return rentalHistories.stream()
-                .map(RentalHistoryResponseDTO::from)
+                findAllByRentalStatusAndMemberOrderByReturnDateAsc(RETURNED, member);
+        //결제 정보
+        PaymentResponseDTO payment = getPaymentInfo(rentalHistories.get(0).getOrder());
+        List<RentalHistoryResponseDTO> detail = rentalHistories.stream()
+                .map(history -> RentalHistoryResponseDTO.from(history, payment)) // 결제정보 넣어줌
                 .collect(Collectors.toList());
+
+        // 주문단위로 묶음
+        Map<Long, List<RentalHistoryResponseDTO>> list = detail.stream()
+                .collect(Collectors.groupingBy(RentalHistoryResponseDTO::getOrderId));
+
+        // RentalHistoryListResponseDTO 변환
+        return list.values().stream()
+                .map(RentalHistoryListResponseDTO::from)
+                .collect(Collectors.toList());
+    }
+
+    public PaymentResponseDTO getPaymentInfo(Order order){
+        TossPayment payment = paymentRepository.findByOrderAndPaymentPurpose(order, OVERDUE).orElseThrow(
+                () -> new PaymentException(PAYMENT_NOT_FOUND));
+        return PaymentResponseDTO.from(payment);
     }
 }

@@ -1,10 +1,7 @@
 package com.uzem.book_cycle.book.service;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
-import com.uzem.book_cycle.book.dto.GroupReturnResponseDTO;
-import com.uzem.book_cycle.book.dto.RentalHistoryResponseDTO;
-import com.uzem.book_cycle.book.dto.RentalResponseDTO;
-import com.uzem.book_cycle.book.dto.ReservationResponseDTO;
+import com.uzem.book_cycle.book.dto.*;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.entity.Order;
@@ -23,7 +20,7 @@ public interface RentalService {
                                         PaymentRequestDTO payment);
     RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Member member);
     List<RentalHistoryResponseDTO> getMyRentals(Member member);
-    List<RentalHistoryResponseDTO> getMyOverdue(Member member);
-    List<RentalHistoryResponseDTO> getMyRentalHistories(Member member);
+    List<OverdueListResponseDTO> getMyOverdue(Member member);
+    List<RentalHistoryListResponseDTO> getMyRentalHistories(Member member);
 
 }
