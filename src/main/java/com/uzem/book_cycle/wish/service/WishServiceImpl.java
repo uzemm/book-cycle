@@ -6,6 +6,7 @@ import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.SalesException;
 import com.uzem.book_cycle.exception.WishException;
 import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.wish.dto.WishResponseDTO;
 import com.uzem.book_cycle.wish.entity.Wish;
 import com.uzem.book_cycle.wish.repository.WishRepository;
@@ -27,10 +28,12 @@ public class WishServiceImpl implements WishService {
 
     private final SalesRepository salesRepository;
     private final WishRepository wishRepository;
+    private final MemberRepository memberRepository;
 
     // 관심도서 추가
     @Override
-    public WishResponseDTO addWishBook(Long salesBookId, Member member) {
+    public WishResponseDTO addWishBook(Long salesBookId, Long memberId) {
+        Member member = findByMemberId(memberId);
         // 판매도서 조회
         SalesBook salesBook = salesRepository.findById(salesBookId).orElseThrow(
                 () -> new SalesException(SALES_BOOK_NOT_FOUND));
@@ -49,7 +52,8 @@ public class WishServiceImpl implements WishService {
     // 관심도서 조회
     @Override
     @Transactional(readOnly = true)
-    public List<WishResponseDTO> getWishBookList(Member member) {
+    public List<WishResponseDTO> getWishBookList(Long memberId) {
+        Member member = findByMemberId(memberId);
         if(member==null){
             throw new MemberException(MEMBER_NOT_FOUND);
         }
@@ -61,9 +65,14 @@ public class WishServiceImpl implements WishService {
     }
 
     @Override
-    public void deleteWishBook(Long salesBookId, Member member) {
-        Wish wish = wishRepository.findByMemberAndSalesBookId(member, salesBookId).orElseThrow(
-                () -> new WishException(WISH_BOOK_NOT_FOUND));
+    public void deleteWishBook(Long salesBookId, Long memberId) {
+        Wish wish = wishRepository.findByMemberIdAndSalesBookId(memberId, salesBookId)
+                .orElseThrow(() -> new WishException(WISH_BOOK_NOT_FOUND));
         wishRepository.delete(wish);
+    }
+
+    private Member findByMemberId(Long memberId) {
+        return memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MEMBER_NOT_FOUND));
     }
 }

@@ -12,6 +12,7 @@ import com.uzem.book_cycle.book.policy.OverduePolicy;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
@@ -28,6 +29,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
@@ -56,6 +58,9 @@ class RentalServiceImplTest {
 
     @Mock
     private PaymentRepository paymentRepository;
+
+    @Mock
+    private MemberRepository memberRepository;
 
     @InjectMocks
     private RentalServiceImpl rentalService;
@@ -156,11 +161,12 @@ class RentalServiceImplTest {
                 .order(order)
                 .build();
 
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(rentalHistoryRepository.findAllByOrderId(order.getId())).willReturn(List.of(rentalHistory));
 
         //when
         GroupReturnResponseDTO groupReturnResponseDTO =
-                rentalService.returnRental(rentalHistory.getOrder().getId(), member, payment);
+                rentalService.returnRental(rentalHistory.getOrder().getId(), member.getId(), payment);
 
         //then
         RentalHistoryResponseDTO response = groupReturnResponseDTO.getRentalHistory().get(0);
@@ -195,13 +201,14 @@ class RentalServiceImplTest {
         RentalHistory rentalHistory2 = getRentalHistory(order, rentalBook2, member);
         List<RentalHistory> rentalHistories = List.of(rentalHistory1, rentalHistory2);
 
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(rentalHistoryRepository.findAllByOrderId(order.getId()))
                 .willReturn(List.of(rentalHistory1, rentalHistory2));
         given(paymentService.processOverduePayment(paymentRequestDTO)).willReturn(paymentResponseDTO);
 
         //when
         GroupReturnResponseDTO groupReturnResponseDTO = rentalService.returnRental(
-                rentalHistories.get(0).getOrder().getId(), member, paymentRequestDTO);
+                rentalHistories.get(0).getOrder().getId(), member.getId(), paymentRequestDTO);
 
         //then
         assertThat(groupReturnResponseDTO).isNotNull();
@@ -260,13 +267,14 @@ class RentalServiceImplTest {
         RentalHistory rentalHistory = getRentalHistory(order, rentalBook, member);
         List<RentalHistory> rentalHistories = List.of(rentalHistory);
 
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(rentalHistoryRepository.findAllByOrderId(order.getId()))
                 .willReturn(List.of(rentalHistory));
         given(paymentService.processOverduePayment(paymentRequestDTO)).willReturn(paymentResponseDTO);
 
         //when
         GroupReturnResponseDTO groupReturnResponseDTO = rentalService.returnRental(
-                rentalHistories.get(0).getOrder().getId(), member, paymentRequestDTO);
+                rentalHistories.get(0).getOrder().getId(), member.getId(), paymentRequestDTO);
 
         //then
         RentalHistoryResponseDTO result = groupReturnResponseDTO.getRentalHistory().get(0);
@@ -296,11 +304,11 @@ class RentalServiceImplTest {
                 .build();
         RentalHistory rentalHistory = getRentalHistoryRented(order, rentalBook, member);
 
-        given(rentalHistoryRepository.findAllByRentalStatusAndMemberOrderByReturnDateAsc(RENTED, member))
+        given(rentalHistoryRepository.findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(RENTED, member.getId()))
                 .willReturn(List.of(rentalHistory));
 
         //when
-        List<RentalHistoryResponseDTO> myRentals = rentalService.getMyRentals(member);
+        List<RentalHistoryResponseDTO> myRentals = rentalService.getMyRentals(member.getId());
 
         //then
         assertThat(myRentals).isNotNull();
@@ -324,11 +332,11 @@ class RentalServiceImplTest {
                 .build();
         RentalHistory rentalHistory = getRentalHistory(order, rentalBook, member);
 
-        given(rentalHistoryRepository.findAllByRentalStatusAndMemberOrderByReturnDateAsc(OVERDUE, member))
+        given(rentalHistoryRepository.findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(OVERDUE, member.getId()))
                 .willReturn(List.of(rentalHistory));
 
         //when
-        List<OverdueListResponseDTO> myOverdue = rentalService.getMyOverdue(member);
+        List<OverdueListResponseDTO> myOverdue = rentalService.getMyOverdue(member.getId());
 
         //then
         assertThat(myOverdue).isNotNull();
@@ -353,12 +361,12 @@ class RentalServiceImplTest {
         PaymentResponseDTO paymentResponseDTO = getPaymentResponseDTO();
         RentalHistory rentalHistory = getRentalHistoryReturned(order, rentalBook, member);
 
-        given(rentalHistoryRepository.findAllByRentalStatusAndMemberOrderByReturnDateAsc(RETURNED, member))
+        given(rentalHistoryRepository.findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(RETURNED, member.getId()))
                 .willReturn(List.of(rentalHistory));
         given(paymentService.getOverduePayment(rentalHistory.getOrder())).willReturn(paymentResponseDTO);
 
         //when
-        List<RentalHistoryListResponseDTO> myRentalHistories = rentalService.getMyRentalHistories(member);
+        List<RentalHistoryListResponseDTO> myRentalHistories = rentalService.getMyRentalHistories(member.getId());
 
         //then
         assertThat(myRentalHistories).isNotNull();

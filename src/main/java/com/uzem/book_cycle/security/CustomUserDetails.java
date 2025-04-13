@@ -16,18 +16,12 @@ public class CustomUserDetails implements UserDetails {
     private String email;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
-    private Member member;
 
     public CustomUserDetails(Member member){
         this.id = member.getId();
         this.email = member.getEmail();
         this.password = member.getPassword();
         this.authorities = Collections.singleton(new SimpleGrantedAuthority(member.getRole().toString()));
-        this.member = member;
-    }
-
-    public Member getMember() {
-        return member;
     }
 
     public Long getId() {

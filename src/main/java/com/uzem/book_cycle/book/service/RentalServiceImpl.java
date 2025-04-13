@@ -8,12 +8,13 @@ import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.policy.OverduePolicy;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
-import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 
 import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
 
 @Slf4j
 @Service
@@ -39,7 +41,7 @@ public class RentalServiceImpl implements RentalService {
     private final OverduePolicy overduePolicy;
     private final ReservationRepository reservationRepository;
     private final PaymentService paymentService;
-    private final PaymentRepository paymentRepository;
+    private final MemberRepository memberRepository;
 
     // 대여 이력 생성
     public void createRentalHistory(RentalBook rentalBook, Member member,
@@ -82,7 +84,8 @@ public class RentalServiceImpl implements RentalService {
 
     // 예약하기
     @Override
-    public ReservationResponseDTO createReservation(RentalBook rentalBook, Member member) {
+    public ReservationResponseDTO createReservation(RentalBook rentalBook, Long memberId) {
+        Member member = findByMemberId(memberId);
         if(!rentalBook.isRented()) {
             throw new RentalException(BOOK_NOT_RENTED);
         }
@@ -100,8 +103,8 @@ public class RentalServiceImpl implements RentalService {
 
     // 예약 + 결제대기 조회
     @Override
-    public List<ReservationResponseDTO> getMyReservations(Member member) {
-        List<Reservation> reservations = reservationRepository.findAllByMember(member);
+    public List<ReservationResponseDTO> getMyReservations(Long memberId) {
+        List<Reservation> reservations = reservationRepository.findAllByMemberId(memberId);
 
         return reservations.stream()
                 .map(ReservationResponseDTO::from)
@@ -110,9 +113,9 @@ public class RentalServiceImpl implements RentalService {
 
     // 예약 취소
     @Override
-    public void cancelMyReservation(RentalBook rentalBook, Member member) {
-        Reservation reservation = reservationRepository.findByRentalBookAndMember(
-                rentalBook, member).orElseThrow(
+    public void cancelMyReservation(RentalBook rentalBook, Long memberId) {
+        Reservation reservation = reservationRepository.findByRentalBookAndMemberId(
+                rentalBook, memberId).orElseThrow(
                 () -> new RentalException(RESERVATION_NOT_FOUND));
         RentalStatus rentalStatus = reservation.getRentalBook().getRentalStatus();
         if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){
@@ -125,8 +128,9 @@ public class RentalServiceImpl implements RentalService {
 
     // 반납하기
     @Transactional
-    public GroupReturnResponseDTO returnRental(Long orderId, Member member,
+    public GroupReturnResponseDTO returnRental(Long orderId, Long memberId,
                                                PaymentRequestDTO payment) {
+        Member member = findByMemberId(memberId);
         List<RentalHistory> rentalHistories = rentalHistoryRepository.findAllByOrderId(orderId);
 
         // 반납 처리 전 도서 상태 변경
@@ -194,9 +198,9 @@ public class RentalServiceImpl implements RentalService {
     // 결제대기 취소 처리
     @Override
     @Transactional
-    public RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Member member) {
-        Reservation reservation = reservationRepository.findByRentalBookAndMember(
-                rentalBook, member).orElseThrow(
+    public RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Long memberId) {
+        Reservation reservation = reservationRepository.findByRentalBookAndMemberId(
+                rentalBook, memberId).orElseThrow(
                 () -> new RentalException(RESERVATION_NOT_FOUND));
         if(reservation.getRentalBook().getRentalStatus() == PENDING_PAYMENT) {
             cancelPendingReservation(reservation);
@@ -237,9 +241,9 @@ public class RentalServiceImpl implements RentalService {
 
     // 대여 조회
     @Override
-    public List<RentalHistoryResponseDTO> getMyRentals(Member member) {
+    public List<RentalHistoryResponseDTO> getMyRentals(Long memberId) {
         List<RentalHistory> rentalHistories = rentalHistoryRepository.
-                findAllByRentalStatusAndMemberOrderByReturnDateAsc(RENTED, member);
+                findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(RENTED, memberId);
         // 대여도서 상태 검증
         for(RentalHistory rentalHistory : rentalHistories){
             if(rentalHistory.getRentalStatus() != RENTED) {
@@ -253,10 +257,10 @@ public class RentalServiceImpl implements RentalService {
 
     // 연체 조회
     @Override
-    public List<OverdueListResponseDTO> getMyOverdue(Member member) {
+    public List<OverdueListResponseDTO> getMyOverdue(Long memberId) {
         // 연체도서 조회
         List<RentalHistory> rentalHistories = rentalHistoryRepository.
-                findAllByRentalStatusAndMemberOrderByReturnDateAsc(RentalStatus.OVERDUE, member);
+                findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(RentalStatus.OVERDUE, memberId);
         // 대여도서 상태 검증
         for(RentalHistory rentalHistory : rentalHistories){
             if(rentalHistory.getRentalStatus() != RentalStatus.OVERDUE) {
@@ -279,10 +283,10 @@ public class RentalServiceImpl implements RentalService {
 
     // 대여이력 조회
     @Override
-    public List<RentalHistoryListResponseDTO> getMyRentalHistories(Member member) {
+    public List<RentalHistoryListResponseDTO> getMyRentalHistories(Long memberId) {
         // 대여이력 조회
         List<RentalHistory> rentalHistories = rentalHistoryRepository.
-                findAllByRentalStatusAndMemberOrderByReturnDateAsc(RETURNED, member);
+                findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(RETURNED, memberId);
         // 대여도서 상태 검증
         for(RentalHistory rentalHistory : rentalHistories){
             if(rentalHistory.getRentalStatus() != RETURNED) {
@@ -305,4 +309,8 @@ public class RentalServiceImpl implements RentalService {
                 .collect(Collectors.toList());
     }
 
+    private Member findByMemberId(Long memberId) {
+        return memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MEMBER_NOT_FOUND));
+    }
 }

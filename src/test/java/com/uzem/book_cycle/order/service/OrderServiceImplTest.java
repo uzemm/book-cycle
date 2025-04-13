@@ -124,12 +124,13 @@ class OrderServiceImplTest {
         List<OrderItem> orderItems = getOrderItems(order, salesBook, rentalBook);
         orderItems.forEach(order::addOrderItem);
 
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
         given(salesRepository.findById(1L)).willReturn(Optional.of(salesBook));
         given(rentalRepository.findById(1L)).willReturn(Optional.of(rentalBook));
 
         //when
         OrderResponseDTO result = orderService.confirmOrder(
-                request, payment, member, LocalDate.now());
+                request, payment, member.getId(), LocalDate.now());
 
         //then
         assertThat(result).isNotNull();

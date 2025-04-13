@@ -11,8 +11,8 @@ import java.util.Optional;
 
 @Repository
 public interface SalesRepository extends JpaRepository<SalesBook, Long> {
-    Optional<SalesBook> findById(Long saleId);
-    Optional<SalesBook> findByIdAndIsDeletedFalse(Long saleId);
+    Optional<SalesBook> findById(Long salesBookId);
+    Optional<SalesBook> findByIdAndIsDeletedFalse(Long salesBookId);
 
     @Query("SELECT s FROM SalesBook s WHERE (s.title LIKE %:keyword% " +
             "OR s.author LIKE %:keyword% OR s.isbn = :keyword) " +

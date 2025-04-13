@@ -12,7 +12,7 @@ import java.util.List;
 public interface RentalHistoryRepository extends JpaRepository<RentalHistory, Long> {
 
     List<RentalHistory> findAllByRentalStatus(RentalStatus rentalStatus);
-    List<RentalHistory> findAllByRentalStatusAndMemberOrderByReturnDateAsc(
-            RentalStatus rentalStatus, Member member);
+    List<RentalHistory> findAllByRentalStatusAndMemberIdOrderByReturnDateAsc(
+            RentalStatus rentalStatus, Long memberId);
     List<RentalHistory> findAllByOrderId(Long orderId);
 }

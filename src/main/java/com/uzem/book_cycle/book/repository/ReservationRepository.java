@@ -15,8 +15,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     boolean existsByRentalBook(RentalBook rentalBook);
     boolean existsByRentalBookAndMember(RentalBook rentalBook, Member member);
-    Optional<Reservation> findByRentalBookAndMember(RentalBook rentalBook, Member member);
-    List<Reservation> findAllByMember(Member member);
+    Optional<Reservation> findByRentalBookAndMemberId(RentalBook rentalBook, Long memberId);
+    List<Reservation> findAllByMemberId(Long memberId);
     Optional<Reservation> deleteByRentalBook(RentalBook rentalBook);
     List<Reservation> findAllByRentalBook_RentalStatus(RentalStatus rentalStatus);
 

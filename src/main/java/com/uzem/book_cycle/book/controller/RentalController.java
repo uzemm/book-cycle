@@ -31,7 +31,8 @@ public class RentalController {
             @AuthenticationPrincipal CustomUserDetails userDetails) {
         RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
-        ReservationResponseDTO reservation = rentalService.createReservation(rentalBook, userDetails.getMember());
+        ReservationResponseDTO reservation = rentalService.createReservation(
+                rentalBook, userDetails.getId());
 
         return ResponseEntity.ok().body(reservation);
     }

@@ -6,6 +6,7 @@ import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.book.service.RentalServiceImpl;
+import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.exception.SalesException;
@@ -32,6 +33,7 @@ import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.admin.type.SalesErrorCode.*;
 import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
+import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
 import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
 import static com.uzem.book_cycle.order.type.ItemType.SALE;
 import static com.uzem.book_cycle.order.type.OrderErrorCode.*;
@@ -53,7 +55,10 @@ public class OrderServiceImpl implements OrderService{
     @Transactional
     public OrderResponseDTO confirmOrder(OrderRequestDTO orderRequestDTO,
                                          PaymentRequestDTO payment,
-                                         Member member, LocalDate now){
+                                         Long memberId, LocalDate now){
+        // 회원 조회
+        Member member = findByMemberId(memberId);
+
         // 주문 생성 및 저장
         Order order = createOrder(orderRequestDTO, member);
         paymentService.processPayment(payment); // 결제 승인
@@ -210,5 +215,11 @@ public class OrderServiceImpl implements OrderService{
         Order order = orderRepository.findById(orderId).orElseThrow(
                 () -> new OrderException(ORDER_NOT_FOUND));
         return OrderResponseDTO.from(order);
+    }
+
+    // 회원 조회
+    private Member findByMemberId(Long memberId) {
+        return memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MEMBER_NOT_FOUND));
     }
 }

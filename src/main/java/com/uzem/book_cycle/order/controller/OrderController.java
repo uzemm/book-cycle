@@ -28,7 +28,7 @@ public class OrderController {
         OrderResponseDTO order = orderService.confirmOrder(
                 orderPayment.getOrder(),
                 orderPayment.getPayment(),
-                userDetails.getMember(), now);
+                userDetails.getId(), now);
         Map<String, String> response = new HashMap<>();
         response.put("orderId", order.getTossOrderId());
 
