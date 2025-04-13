@@ -157,12 +157,12 @@ public class OrderServiceImpl implements OrderService{
                         SalesBook salesBook = salesRepository.findById(item.getBookId())
                                 .orElseThrow(() -> new SalesException(SALES_BOOK_NOT_FOUND));
                         validateSaleBookStatus(salesBook);
-                        return OrderItem.from(item, order, salesBook, null);
+                        return OrderItem.fromSales(order, salesBook);
                     } else {
                         RentalBook rentalBook = rentalRepository.findById(item.getBookId())
                                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
                         validateRentalBookStatus(rentalBook, member);
-                        return OrderItem.from(item, order, null, rentalBook);
+                        return OrderItem.fromRental(order, rentalBook);
                     }
                 }).collect(Collectors.toList());
         return orderItems;
