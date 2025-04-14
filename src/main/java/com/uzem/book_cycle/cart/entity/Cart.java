@@ -22,8 +22,10 @@ public class Cart extends BaseEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @Column(nullable = false)
     private Long bookId;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ItemType itemType;
 
