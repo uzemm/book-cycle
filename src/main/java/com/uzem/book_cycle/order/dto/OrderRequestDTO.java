@@ -25,7 +25,8 @@ public class OrderRequestDTO {
     @NotBlank
     private String receiverAddress;
     @NotBlank
-    @Pattern(regexp = "^01[016-9][0-9]{7,8}$", message = "전화번호는 숫자만 입력해주세요.")
+    @Pattern(regexp = "^01[016-9][0-9]{7,8}$",
+            message = "전화번호는 숫자만 입력해주세요.")
     private String receiverPhone;
     private String deliveryMessage;
     @NotNull
@@ -35,5 +36,12 @@ public class OrderRequestDTO {
     private List<OrderItemRequestDTO> orderItems; // 바로구매일 때만 채움
 
     private PaymentRequestDTO payment;
+
+    private List<Long> cartIds;
+
+    public boolean isCartOrder() {
+        return (this.orderItems == null || this.orderItems.isEmpty())
+                && (this.cartIds != null && !this.cartIds.isEmpty());
+    }
 
 }

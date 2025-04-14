@@ -6,18 +6,17 @@ import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.book.service.RentalServiceImpl;
-import com.uzem.book_cycle.exception.MemberException;
-import com.uzem.book_cycle.exception.OrderException;
-import com.uzem.book_cycle.exception.RentalException;
-import com.uzem.book_cycle.exception.SalesException;
+import com.uzem.book_cycle.cart.entity.Cart;
+import com.uzem.book_cycle.cart.repository.CartRepository;
+import com.uzem.book_cycle.exception.*;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
-import com.uzem.book_cycle.order.dto.OrderItemRequestDTO;
 import com.uzem.book_cycle.order.dto.OrderRequestDTO;
 import com.uzem.book_cycle.order.dto.OrderResponseDTO;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.order.entity.OrderItem;
 import com.uzem.book_cycle.order.repository.OrderRepository;
+import com.uzem.book_cycle.order.type.ItemType;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import jakarta.transaction.Transactional;
@@ -27,12 +26,14 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.admin.type.SalesErrorCode.*;
 import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
+import static com.uzem.book_cycle.cart.type.CartErrorCode.CART_NOT_FOUND;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
 import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
 import static com.uzem.book_cycle.order.type.ItemType.SALE;
@@ -50,6 +51,7 @@ public class OrderServiceImpl implements OrderService{
     private final ReservationRepository reservationRepository;
 
     private static final double REWARD_POINT = 0.01;
+    private final CartRepository cartRepository;
 
     // 주문 및 결제 완료
     @Transactional
@@ -74,20 +76,21 @@ public class OrderServiceImpl implements OrderService{
 
     @Transactional
     public Order createOrder(OrderRequestDTO requestDTO, Member member) {
-        if(requestDTO.getOrderItems() == null || requestDTO.getOrderItems().isEmpty()) {
+        if(!requestDTO.isCartOrder()) {
             throw new OrderException(ORDER_ITEM_NOT_FOUND);
         }
-        // 1. 적립 포인트 계산
-        long rewardPoint = calculateRewardPoint(requestDTO.getOrderItems());
 
-        // 2. 주문 엔티티 생성
+        // 1. 주문 엔티티 생성
         Order order = Order.from(requestDTO, new ArrayList<>(), member);
         checkDuplicateOrder(order.getTossOrderId()); // 중복 주문 확인
 
-        // 3. 주문 항목 생성
+        // 2. 주문 항목 생성
         List<OrderItem> orderItems = getOrderItems(requestDTO, order, member);
         orderItems.forEach(order::addOrderItem); // 양방향 연결
-        order.setOrderName(Order.createOrderName(order.getOrderItems())); // OrderName 설정
+        order.setOrderName(createOrderName(orderItems)); // OrderName 설정
+
+        // 3. 적립 포인트 계산
+        long rewardPoint = calculateRewardPoint(orderItems);
 
         // 4. 총 결제 금액 계산
         long totalPrice = calculateTotalPrice(orderItems, order);
@@ -126,6 +129,7 @@ public class OrderServiceImpl implements OrderService{
         List<RentalBook> rentalBooks = orderItems.stream()
                 .filter(item -> item.getItemType() == RENTAL)
                 .map(OrderItem::getRentalBook)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
         rentalBooks.forEach(rental -> {
@@ -144,28 +148,54 @@ public class OrderServiceImpl implements OrderService{
         List<SalesBook> salesBooks = orderItems.stream()
                 .filter(item -> item.getItemType() == SALE)
                 .map(OrderItem::getSalesBook)
-                .collect(Collectors.toList());
+                .filter(Objects::nonNull)
+                .toList();
         salesBooks.forEach(SalesBook::salesStatusSold);
         salesRepository.saveAll(salesBooks);
     }
 
     // 주문 도서
     private List<OrderItem> getOrderItems(OrderRequestDTO requestDTO, Order order, Member member) {
-        List<OrderItem> orderItems = requestDTO.getOrderItems().stream() //OrderItem 생성
-                .map(item -> {
-                    if (item.getItemType() == SALE) {
-                        SalesBook salesBook = salesRepository.findById(item.getBookId())
-                                .orElseThrow(() -> new SalesException(SALES_BOOK_NOT_FOUND));
-                        validateSaleBookStatus(salesBook);
-                        return OrderItem.fromSales(order, salesBook);
-                    } else {
-                        RentalBook rentalBook = rentalRepository.findById(item.getBookId())
-                                .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
-                        validateRentalBookStatus(rentalBook, member);
-                        return OrderItem.fromRental(order, rentalBook);
-                    }
+        if(requestDTO.isCartOrder()){
+            // 장바구니 주문
+            return getOrderItemsFromCart(requestDTO.getCartIds(), order, member);
+        } else{
+            // 바로 주문
+            return getOrderItemsForDirectOrder(requestDTO, order, member);
+        }
+    }
+
+    private List<OrderItem> getOrderItemsFromCart(List<Long> cartIds, Order order, Member member) {
+        List<Cart> cartList = cartRepository.findAllByIdInAndMember(cartIds, member);
+        if(cartList.isEmpty()){
+            throw new CartException(CART_NOT_FOUND);
+        }
+        return cartList.stream()
+                .map(cart -> {
+                    return createOrderItem(cart.getItemType(), cart.getBookId(), order, member);
                 }).collect(Collectors.toList());
-        return orderItems;
+    }
+    private List<OrderItem> getOrderItemsForDirectOrder(OrderRequestDTO requestDTO, Order order, Member member) {
+        return requestDTO.getOrderItems().stream() //OrderItem 생성
+                .map(item -> {
+                    return createOrderItem(item.getItemType(), item.getBookId(), order, member);
+                }).collect(Collectors.toList());
+    }
+    private OrderItem createOrderItem(ItemType type, Long bookId, Order order, Member member) {
+        if (type == SALE) { // 판매 도서
+            SalesBook salesBook = salesRepository.findById(bookId)
+                    .orElseThrow(() -> new SalesException(SALES_BOOK_NOT_FOUND));
+            // 도서 상태 검증
+            validateSaleBookStatus(salesBook);
+            return OrderItem.fromSales(order, salesBook);
+        } else {
+            // 대여 도서
+            RentalBook rentalBook = rentalRepository.findById(bookId)
+                    .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
+            // 도서 상태 검증
+            validateRentalBookStatus(rentalBook, member);
+            return OrderItem.fromRental(order, rentalBook);
+        }
     }
 
     private static void validateSaleBookStatus(SalesBook saleBook) {
@@ -173,7 +203,6 @@ public class OrderServiceImpl implements OrderService{
             throw new SalesException(ALREADY_SOLD_OUT_SALE_BOOK);
         }
     }
-
     private static void validateRentalBookStatus(RentalBook rentalBook, Member member) {
         if(rentalBook.getRentalStatus() == RENTED){ // 대여중
             throw new RentalException(ALREADY_RENTED);
@@ -202,9 +231,8 @@ public class OrderServiceImpl implements OrderService{
     }
 
     // 적립금 계산
-    public long calculateRewardPoint(List<OrderItemRequestDTO> orderItems) {
+    public long calculateRewardPoint(List<OrderItem> orderItems) {
        return orderItems.stream()
-               .filter(item -> (item.getItemType() == SALE))
                .mapToLong(item ->
                        (long) (item.getItemPrice() * REWARD_POINT)) // 1% 적립
                .sum(); // SALE 상품 여러 개일 경우 합산
@@ -221,5 +249,17 @@ public class OrderServiceImpl implements OrderService{
     private Member findByMemberId(Long memberId) {
         return memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MEMBER_NOT_FOUND));
+    }
+
+    public static String createOrderName(List<OrderItem> orderItems){
+        if (orderItems == null || orderItems.isEmpty()) {
+            return "도서 없음";
+        }
+
+        if(orderItems.size() == 1 ) {
+            return orderItems.get(0).getTitle();
+        } else {
+            return orderItems.get(0).getTitle()+ " 외 " + (orderItems.size() - 1) + "권";
+        }
     }
 }

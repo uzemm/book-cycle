@@ -35,6 +35,8 @@ public class OrderItem extends BaseEntity {
     @Column(nullable = false)
     private Long itemPrice;
 
+    private String title;
+
     public void setOrder (Order order) {
         this.order = order;
     }
@@ -45,6 +47,8 @@ public class OrderItem extends BaseEntity {
                     .order(order)
                     .itemType(SALE)
                     .itemPrice(salesBook.getPrice())
+                    .salesBook(salesBook)
+                    .title(salesBook.getTitle())
                     .build();
     }
     public static OrderItem fromRental(Order order,
@@ -53,6 +57,8 @@ public class OrderItem extends BaseEntity {
                 .order(order)
                 .itemType(RENTAL)
                 .itemPrice(rentalBook.getPrice())
+                .title(rentalBook.getTitle())
+                .rentalBook(rentalBook)
                 .build();
     }
 }
