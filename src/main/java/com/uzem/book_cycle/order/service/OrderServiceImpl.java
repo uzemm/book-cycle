@@ -130,11 +130,11 @@ public class OrderServiceImpl implements OrderService{
     // 판매, 도서 상태 변경 및 저장
     @Transactional
     public void updateOrderItems(List<OrderItem> orderItems, Member member, Order order, LocalDate now) {
-        updateAndSaveSalesBook(orderItems);
-        updateAndSaveRentalBook(orderItems, member, order, now);
+        updateSalesBookStatusToSold(orderItems);
+        updateRentalBookStatusToRented(orderItems, member, order, now);
     }
 
-    public void updateAndSaveRentalBook(List<OrderItem> orderItems,
+    public void updateRentalBookStatusToRented(List<OrderItem> orderItems,
                                          Member member,
                                         Order order, LocalDate now) {
         List<RentalBook> rentalBooks = orderItems.stream()
@@ -155,7 +155,7 @@ public class OrderServiceImpl implements OrderService{
         rentalRepository.saveAll(rentalBooks);
     }
 
-    public void updateAndSaveSalesBook(List<OrderItem> orderItems) {
+    public void updateSalesBookStatusToSold(List<OrderItem> orderItems) {
         List<SalesBook> salesBooks = orderItems.stream()
                 .filter(item -> item.getItemType() == SALE)
                 .map(OrderItem::getSalesBook)
@@ -186,12 +186,14 @@ public class OrderServiceImpl implements OrderService{
                     return createOrderItem(cart.getItemType(), cart.getBookId(), order, member);
                 }).collect(Collectors.toList());
     }
+
     private List<OrderItem> getOrderItemsForDirectOrder(OrderRequestDTO requestDTO, Order order, Member member) {
         return requestDTO.getOrderItems().stream() //OrderItem 생성
                 .map(item -> {
                     return createOrderItem(item.getItemType(), item.getBookId(), order, member);
                 }).collect(Collectors.toList());
     }
+
     private OrderItem createOrderItem(ItemType type, Long bookId, Order order, Member member) {
         if (type == SALE) { // 판매 도서
             SalesBook salesBook = salesRepository.findById(bookId)
