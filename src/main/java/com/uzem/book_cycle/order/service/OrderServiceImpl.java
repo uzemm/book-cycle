@@ -21,6 +21,7 @@ import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -39,6 +40,7 @@ import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
 import static com.uzem.book_cycle.order.type.ItemType.SALE;
 import static com.uzem.book_cycle.order.type.OrderErrorCode.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService{
@@ -69,6 +71,15 @@ public class OrderServiceImpl implements OrderService{
         // 판매, 대여 도서 상태 변경 및 저장
         List<OrderItem> orderItems = order.getOrderItems();
         updateOrderItems(orderItems, member, order, now);
+
+        // 장바구니 주문 시 주문 완료 후 장바구니 삭제
+        if(orderRequestDTO.isCartOrder()){
+            cartRepository.deleteByIdInAndMember(orderRequestDTO.getCartIds(), member);
+        }
+        log.info("Deleted {} cart items for memberId {}",
+                orderRequestDTO.getCartIds().size(), member.getId());
+
+
 
         // 응답 DTO 변환 후 반환
         return OrderResponseDTO.from(order);
