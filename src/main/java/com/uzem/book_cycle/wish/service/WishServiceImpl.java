@@ -18,8 +18,7 @@ import java.util.List;
 
 import static com.uzem.book_cycle.admin.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
-import static com.uzem.book_cycle.wish.type.WishErrorCode.ALREADY_ADDED_TO_WISH;
-import static com.uzem.book_cycle.wish.type.WishErrorCode.WISH_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.wish.type.WishErrorCode.*;
 
 @Service
 @Transactional
@@ -40,7 +39,7 @@ public class WishServiceImpl implements WishService {
 
         // 중복 방지
         if(wishRepository.existsByMemberAndSalesBook(member, salesBook)){
-            throw new WishException(ALREADY_ADDED_TO_WISH);
+            throw new WishException(DUPLICATE_WISH_ITEM);
         }
 
         Wish wish = Wish.from(salesBook, member);
