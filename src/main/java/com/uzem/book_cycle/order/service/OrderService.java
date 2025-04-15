@@ -10,6 +10,6 @@ import java.time.LocalDate;
 public interface OrderService {
     OrderResponseDTO confirmOrder(OrderRequestDTO orderRequestDTO,
                                   PaymentRequestDTO payment,
-                                  Member member, LocalDate now);
+                                  Long memberId, LocalDate now);
     OrderResponseDTO getOrders(Long orderId);
 }

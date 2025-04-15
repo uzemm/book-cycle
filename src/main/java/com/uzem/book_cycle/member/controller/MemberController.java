@@ -101,7 +101,7 @@ public class MemberController {
     public ResponseEntity<List<ReservationResponseDTO>> getMyReservations(
             @AuthenticationPrincipal CustomUserDetails userDetails){
         List<ReservationResponseDTO> myReservations =
-                rentalService.getMyReservations(userDetails.getMember());
+                rentalService.getMyReservations(userDetails.getId());
         return ResponseEntity.ok(myReservations);
     }
 
@@ -113,7 +113,7 @@ public class MemberController {
             @AuthenticationPrincipal CustomUserDetails userDetails){
         RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
-                rentalService.cancelMyReservation(rentalBook, userDetails.getMember());
+                rentalService.cancelMyReservation(rentalBook, userDetails.getId());
 
         return ResponseEntity.ok().body("예약 취소 완료");
     }
@@ -123,7 +123,7 @@ public class MemberController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<RentalHistoryResponseDTO>> getMyRentals(
             @AuthenticationPrincipal CustomUserDetails userDetails){
-        List<RentalHistoryResponseDTO> myRentals = rentalService.getMyRentals(userDetails.getMember());
+        List<RentalHistoryResponseDTO> myRentals = rentalService.getMyRentals(userDetails.getId());
         return ResponseEntity.ok(myRentals);
     }
 
@@ -132,7 +132,7 @@ public class MemberController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<OverdueListResponseDTO>> getMyOverdues(
             @AuthenticationPrincipal CustomUserDetails userDetails){
-        List<OverdueListResponseDTO> myOverdue = rentalService.getMyOverdue(userDetails.getMember());
+        List<OverdueListResponseDTO> myOverdue = rentalService.getMyOverdue(userDetails.getId());
         return ResponseEntity.ok(myOverdue);
     }
 
@@ -142,7 +142,7 @@ public class MemberController {
     public ResponseEntity<List<RentalHistoryListResponseDTO>> getMyRentalHistories(
             @AuthenticationPrincipal CustomUserDetails userDetails){
         List<RentalHistoryListResponseDTO> myRentalHistories =
-                rentalService.getMyRentalHistories(userDetails.getMember());
+                rentalService.getMyRentalHistories(userDetails.getId());
         return ResponseEntity.ok(myRentalHistories);
     }
 
@@ -156,7 +156,7 @@ public class MemberController {
 
         GroupReturnResponseDTO returnResponseDTO = rentalService.returnRental(
                 orderId,
-                userDetails.getMember(), requestDTO.getPayment());
+                userDetails.getId(), requestDTO.getPayment());
 
         return ResponseEntity.ok(returnResponseDTO);
     }
@@ -172,7 +172,7 @@ public class MemberController {
                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
 
         RentalResponseDTO rentalResponseDTO = rentalService.cancelPendingPayment(
-                rentalBook, userDetails.getMember());
+                rentalBook, userDetails.getId());
 
         return ResponseEntity.ok(rentalResponseDTO);
     }

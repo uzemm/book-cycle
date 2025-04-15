@@ -3,15 +3,11 @@ package com.uzem.book_cycle.order.entity;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.dto.OrderRequestDTO;
-import com.uzem.book_cycle.order.type.ItemType;
 import com.uzem.book_cycle.order.type.OrderStatus;
 import com.uzem.book_cycle.payment.type.PaymentMethod;
 import com.uzem.book_cycle.order.type.ShippingStatus;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.RandomUtils;
 
@@ -83,6 +79,7 @@ public class Order extends BaseEntity {
 
     private String tossOrderId;
 
+    @Setter
     private String orderName;
 
     public void addOrderItem(OrderItem orderItem) {
@@ -141,24 +138,4 @@ public class Order extends BaseEntity {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
-    public static String createOrderName(List<OrderItem> orderItems){
-        if (orderItems == null || orderItems.isEmpty()) {
-            return "도서 없음";
-        }
-
-        OrderItem first = orderItems.get(0);
-        String title = "제목없음";
-
-        if(orderItems.get(0).getItemType() == ItemType.SALE ){
-            title = first.getSalesBook().getTitle();
-        } else {
-            title = first.getRentalBook().getTitle();
-        }
-
-        return orderItems.size() == 1 ? title : title + " 외 " + (orderItems.size()-1) + "권";
-    }
-
-    public void setOrderName(String orderName) {
-        this.orderName = orderName;
-    }
 }

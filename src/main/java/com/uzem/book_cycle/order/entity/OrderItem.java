@@ -3,11 +3,13 @@ package com.uzem.book_cycle.order.entity;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.entity.BaseEntity;
-import com.uzem.book_cycle.order.dto.OrderItemRequestDTO;
 import com.uzem.book_cycle.order.type.ItemType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+
+import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
+import static com.uzem.book_cycle.order.type.ItemType.SALE;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,27 +35,30 @@ public class OrderItem extends BaseEntity {
     @Column(nullable = false)
     private Long itemPrice;
 
+    private String title;
+
     public void setOrder (Order order) {
         this.order = order;
     }
 
-    public static OrderItem from(OrderItemRequestDTO request, Order order,
-                SalesBook salesBook, RentalBook rentalBook) {
-        // 도서 가격 타입별
-        Long itemPrice = (request.getItemType() == ItemType.SALE)
-                ? salesBook.getPrice()
-                : rentalBook.getPrice();
-
-        OrderItem.OrderItemBuilder builder = OrderItem.builder()
+    public static OrderItem fromSales(Order order,
+                SalesBook salesBook) {
+        return OrderItem.builder()
                     .order(order)
-                    .itemType(request.getItemType())
-                    .itemPrice(itemPrice);
-
-            if(request.getItemType() == ItemType.SALE){
-                builder.salesBook(salesBook);
-            } else{
-                builder.rentalBook(rentalBook);
-            }
-            return builder.build();
+                    .itemType(SALE)
+                    .itemPrice(salesBook.getPrice())
+                    .salesBook(salesBook)
+                    .title(salesBook.getTitle())
+                    .build();
+    }
+    public static OrderItem fromRental(Order order,
+                                 RentalBook rentalBook) {
+        return OrderItem.builder()
+                .order(order)
+                .itemType(RENTAL)
+                .itemPrice(rentalBook.getPrice())
+                .title(rentalBook.getTitle())
+                .rentalBook(rentalBook)
+                .build();
     }
 }

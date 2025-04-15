@@ -53,6 +53,27 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(e.getRentalErrorCode().getCode(), e.getErrorMessage());
     }
 
+    @ExceptionHandler(WishException.class)
+    public ErrorResponse handleWishException(WishException e) {
+        log.error("{} is occurred.", e.getWishErrorCode());
+
+        return new ErrorResponse(e.getWishErrorCode().getCode(), e.getErrorMessage());
+    }
+
+    @ExceptionHandler(CartException.class)
+    public ErrorResponse handleWishException(CartException e) {
+        log.error("{} is occurred.", e.getCartErrorCode());
+
+        return new ErrorResponse(e.getCartErrorCode().getCode(), e.getErrorMessage());
+    }
+
+    @ExceptionHandler(OrderException.class)
+    public ErrorResponse handleOrderException(OrderException e) {
+        log.error("{} is occurred.", e.getOrderErrorCode());
+
+        return new ErrorResponse(e.getOrderErrorCode().getCode(), e.getErrorMessage());
+    }
+
     // 유효성 검사 실패
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {

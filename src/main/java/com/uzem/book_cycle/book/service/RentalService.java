@@ -13,14 +13,14 @@ import java.util.List;
 public interface RentalService {
     void createRentalHistory(RentalBook rentalBook, Member member, Order order, LocalDate now);
     long calculateOverdueFee(RentalHistory rentalHistory, LocalDate now);
-    ReservationResponseDTO createReservation(RentalBook rentalBook, Member member);
-    void cancelMyReservation(RentalBook rentalBook, Member member);
-    List<ReservationResponseDTO> getMyReservations(Member member);
-    GroupReturnResponseDTO returnRental(Long orderId, Member member,
+    ReservationResponseDTO createReservation(RentalBook rentalBook, Long memberId);
+    void cancelMyReservation(RentalBook rentalBook, Long memberId);
+    List<ReservationResponseDTO> getMyReservations(Long memberId);
+    GroupReturnResponseDTO returnRental(Long orderId, Long memberId,
                                         PaymentRequestDTO payment);
-    RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Member member);
-    List<RentalHistoryResponseDTO> getMyRentals(Member member);
-    List<OverdueListResponseDTO> getMyOverdue(Member member);
-    List<RentalHistoryListResponseDTO> getMyRentalHistories(Member member);
+    RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Long memberId);
+    List<RentalHistoryResponseDTO> getMyRentals(Long memberId);
+    List<OverdueListResponseDTO> getMyOverdue(Long memberId);
+    List<RentalHistoryListResponseDTO> getMyRentalHistories(Long memberId);
 
 }
