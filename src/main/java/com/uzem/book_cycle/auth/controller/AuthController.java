@@ -7,8 +7,6 @@ import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
 import com.uzem.book_cycle.security.token.TokenDTO;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -28,6 +26,7 @@ public class AuthController {
     private final AuthService authService;
     private final TokenProvider tokenProvider;
 
+    @Operation(summary = "회원가입", description = "Book-Cycle에 회원가입합니다.")
     @PostMapping("/signup")
     public ResponseEntity<SignUpResponseDTO> signUp(
             @RequestBody @Valid SignUpRequestDTO request) {
@@ -37,6 +36,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    @Operation(summary = "이메일 인증", description = "이메일 인증번호를 확인합니다.")
     @PostMapping("/verify-check")
     public ResponseEntity<EmailVerificationResponseDTO> verifyEmail
             (@RequestBody @Valid EmailVerificationRequestDTO request) {
@@ -46,6 +46,7 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(summary = "로그인")
     @PostMapping("/login")
     public LoginResponseDTO login(@RequestBody@Valid LoginRequestDTO request) {
         TokenDTO tokenDTO = authService.login(request);
@@ -53,6 +54,7 @@ public class AuthController {
         return LoginResponseDTO.create(tokenDTO);
     }
 
+    @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
         String accessToken = tokenProvider.resolveToken(request);
@@ -62,6 +64,7 @@ public class AuthController {
         return ResponseEntity.ok("로그아웃 성공");
     }
 
+    @Operation(summary = "액세스토큰 재발급 요청")
     @PostMapping("/refresh")
     public ResponseEntity<TokenDTO> reissueAccessToken(@RequestBody @Valid RefreshRequestDTO request) {
 
