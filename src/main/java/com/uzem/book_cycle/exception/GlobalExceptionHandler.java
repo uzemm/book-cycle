@@ -26,10 +26,16 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MemberException.class)
-    public ErrorResponse handleMemberException(MemberException e) {
+    public ResponseEntity<ErrorResponse> handleMemberException(MemberException e) {
         log.error("{} is occurred.", e.getMemberErrorCode());
 
-        return new ErrorResponse(e.getMemberErrorCode().getCode(), e.getErrorMessage());
+        ErrorResponse errorResponse = new ErrorResponse(
+                e.getMemberErrorCode().getCode(),
+                e.getErrorMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(errorResponse);
     }
 
     @ExceptionHandler(SalesException.class)

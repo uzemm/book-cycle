@@ -19,5 +19,5 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findAllByMemberId(Long memberId);
     Optional<Reservation> deleteByRentalBook(RentalBook rentalBook);
     List<Reservation> findAllByRentalBook_RentalStatus(RentalStatus rentalStatus);
-
+    boolean existsByMemberId(Long memberId);
 }

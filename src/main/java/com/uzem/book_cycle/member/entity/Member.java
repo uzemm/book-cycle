@@ -110,4 +110,9 @@ public class Member extends BaseEntity {
         rentalHistories.remove(rentalHistory);
         rentalHistory.setMember(null);
     }
+
+    public void deleteMember(){
+        this.isDeleted = true;
+        this.point = 0L;
+    }
 }

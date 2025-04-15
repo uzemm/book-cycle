@@ -3,13 +3,14 @@ package com.uzem.book_cycle.member.controller;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.book.dto.*;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.service.RentalService;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.dto.*;
 import com.uzem.book_cycle.member.service.MemberService;
 import com.uzem.book_cycle.security.CustomUserDetails;
 import com.uzem.book_cycle.security.token.TokenProvider;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +28,15 @@ import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/members/me")
+@Tag(name = "회원 API", description = "회원 관련 API")
 public class MemberController {
 
     private final MemberService memberService;
     private final TokenProvider tokenProvider;
     private final RentalService rentalService;
     private final AdminRentalRepository adminRentalRepository;
-    private final RentalHistoryRepository rentalHistoryRepository;
 
-    // 내정보
+    @Operation(summary = "내정보 조회")
     @GetMapping()
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberResponseDTO> getMyInfo(
@@ -44,6 +45,7 @@ public class MemberController {
         return ResponseEntity.ok(memberService.getMyInfo(userDetails.getId()));
     }
 
+    @Operation(summary = "내정보 수정")
     @PatchMapping()
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberResponseDTO> updateMyInfo(
@@ -57,6 +59,7 @@ public class MemberController {
         return ResponseEntity.ok(updateMyInfo);
     }
 
+    @Operation(summary = "비밀번호 변경")
     @PatchMapping("/password")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> updateMyPassword(
@@ -72,6 +75,7 @@ public class MemberController {
         return ResponseEntity.ok("비밀번호 변경 성공");
     }
 
+    @Operation(summary = "이메일 변경")
     @PostMapping("/email")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> updateMyEmail(
@@ -84,6 +88,7 @@ public class MemberController {
         return ResponseEntity.ok("이메일 변경 요청 성공");
     }
 
+    @Operation(summary = "이메일 인증번호 확인")
     @PatchMapping("/email/check")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<MemberResponseDTO> updateMyEmailCheck(
@@ -95,7 +100,7 @@ public class MemberController {
         return ResponseEntity.ok(memberResponseDTO);
     }
 
-    // 예약조회
+    @Operation(summary = "예약도서 조회")
     @GetMapping("/reservations")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ReservationResponseDTO>> getMyReservations(
@@ -105,7 +110,7 @@ public class MemberController {
         return ResponseEntity.ok(myReservations);
     }
 
-    // 예약취소
+    @Operation(summary = "예약도서 취소")
     @DeleteMapping("/reservations")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<String> cancelMyReservation(
@@ -118,7 +123,7 @@ public class MemberController {
         return ResponseEntity.ok().body("예약 취소 완료");
     }
 
-    // 대여 도서 조회
+    @Operation(summary = "대여도서 조회")
     @GetMapping("/rentals")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<RentalHistoryResponseDTO>> getMyRentals(
@@ -127,7 +132,7 @@ public class MemberController {
         return ResponseEntity.ok(myRentals);
     }
 
-    // 연체 도서 조회
+    @Operation(summary = "연체도서 조회")
     @GetMapping("/overdues")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<OverdueListResponseDTO>> getMyOverdues(
@@ -136,7 +141,7 @@ public class MemberController {
         return ResponseEntity.ok(myOverdue);
     }
 
-    // 대여 이력 조회
+    @Operation(summary = "대여이력 조회")
     @GetMapping("/rental-histories")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<RentalHistoryListResponseDTO>> getMyRentalHistories(
@@ -146,7 +151,7 @@ public class MemberController {
         return ResponseEntity.ok(myRentalHistories);
     }
 
-    // 반납하기
+    @Operation(summary = "대여도서 반납하기")
     @PostMapping("/return/{orderId}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<GroupReturnResponseDTO> returnMyRental(
@@ -161,7 +166,7 @@ public class MemberController {
         return ResponseEntity.ok(returnResponseDTO);
     }
 
-    // 결제 대기 취소
+    @Operation(summary = "결제대기도서 취소")
     @DeleteMapping("/reservations/pending")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<RentalResponseDTO> cancelPendingRental(
@@ -175,5 +180,14 @@ public class MemberController {
                 rentalBook, userDetails.getId());
 
         return ResponseEntity.ok(rentalResponseDTO);
+    }
+
+    @Operation(summary = "회원 탈퇴")
+    @DeleteMapping("/delete")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deleteMember(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        memberService.deleteMember(userDetails.getId());
+        return ResponseEntity.noContent().build(); // 204
     }
 }
