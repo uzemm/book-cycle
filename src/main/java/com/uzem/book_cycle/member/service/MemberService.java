@@ -1,9 +1,8 @@
 package com.uzem.book_cycle.member.service;
 
-import com.uzem.book_cycle.member.dto.MemberResponseDTO;
-import com.uzem.book_cycle.member.dto.UpdateEmailRequestDTO;
-import com.uzem.book_cycle.member.dto.UpdateInfoRequestDTO;
-import com.uzem.book_cycle.member.dto.UpdatePasswordRequestDTO;
+import com.uzem.book_cycle.member.dto.*;
+
+import java.util.List;
 
 public interface MemberService {
     MemberResponseDTO getMyInfo(Long memberId);
@@ -16,4 +15,5 @@ public interface MemberService {
     MemberResponseDTO UpdateEmailCheck(
             String email, String verificationCode);
     void deleteMember(Long memberId);
+    List<MemberOrderPreviewDTO> getMyOrders(Long memberId);
 }

@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -187,4 +188,12 @@ public class MemberServiceImpl implements MemberService{
         // 회원 탈퇴 시 리프레시 토큰 삭제 (로그인 유지 X)
         redisUtil.delete("refreshToken:" + memberId);
     }
+
+    // 주문 조회
+    public List<MemberOrderPreviewDTO> getMyOrders(Long memberId){
+        return orderRepository.findByMemberId(memberId).stream()
+                .map(MemberOrderPreviewDTO::from)
+                .toList();
+    }
+
 }

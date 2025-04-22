@@ -190,4 +190,13 @@ public class MemberController {
         memberService.deleteMember(userDetails.getId());
         return ResponseEntity.noContent().build(); // 204
     }
+
+    @Operation(summary = "내주문 조회")
+    @GetMapping("/orders")
+    public ResponseEntity<List<MemberOrderPreviewDTO>> getMyOrders(
+            @AuthenticationPrincipal CustomUserDetails userDetails){
+        List<MemberOrderPreviewDTO> myOrders =
+                memberService.getMyOrders(userDetails.getId());
+        return ResponseEntity.ok(myOrders);
+    }
 }
