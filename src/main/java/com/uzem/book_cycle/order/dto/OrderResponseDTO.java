@@ -2,6 +2,7 @@ package com.uzem.book_cycle.order.dto;
 
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.order.type.OrderStatus;
+import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -30,8 +31,9 @@ public class OrderResponseDTO {
     private String tossOrderId;
     private OrderStatus status;
     private String orderName;
+    private PaymentResponseDTO payment;
 
-    public static OrderResponseDTO from(Order order) {
+    public static OrderResponseDTO from(Order order, PaymentResponseDTO payment) {
         List<OrderItemResponseDTO> itemResponseDTOS = order.getOrderItems().stream()
                 .map(OrderItemResponseDTO::from)
                 .collect(Collectors.toList());
@@ -51,6 +53,7 @@ public class OrderResponseDTO {
                 .tossOrderId(order.getTossOrderId())
                 .status(order.getOrderStatus())
                 .orderName(order.getOrderName())
+                .payment(payment)
                 .build();
     }
 }

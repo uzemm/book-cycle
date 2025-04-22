@@ -13,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDateTime;
 
+import static com.uzem.book_cycle.admin.type.SalesStatus.AVAILABLE;
 import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
 
 @Getter
@@ -114,5 +115,9 @@ public class SalesBook extends BaseEntity {
 
     public void salesStatusSold() {
         this.salesStatus = SOLD;
+    }
+
+    public void cancelSalesStatusAvailable() {
+        this.salesStatus = AVAILABLE;
     }
 }
