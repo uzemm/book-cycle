@@ -6,7 +6,7 @@ import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.exception.PaymentException;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.order.repository.OrderRepository;
-import com.uzem.book_cycle.payment.dto.CancelRequestDTO;
+import com.uzem.book_cycle.payment.dto.CancelPaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.entity.Cancel;
@@ -70,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService{
     }
 
     @Transactional
-    public PaymentResponseDTO processCancelPayment(CancelRequestDTO request) {
+    public PaymentResponseDTO processCancelPayment(CancelPaymentRequestDTO request) {
         PaymentResponseDTO tossResponse = requestCancelTossApi(request);
         TossPayment tossPayment = paymentRepository.findByPaymentKey(request.getPaymentKey()).orElseThrow(
                 () -> new OrderException(ORDER_NOT_FOUND));
@@ -124,7 +124,7 @@ public class PaymentServiceImpl implements PaymentService{
     }
 
     // 취소 요청
-    public PaymentResponseDTO requestCancelTossApi(CancelRequestDTO request) {
+    public PaymentResponseDTO requestCancelTossApi(CancelPaymentRequestDTO request) {
         try{
             String apiUrl = "https://api.tosspayments.com/v1/payments/" +
                     request.getPaymentKey() + "/cancel";
@@ -185,7 +185,7 @@ public class PaymentServiceImpl implements PaymentService{
     }
 
     // Cancel 생성
-    private static List<Cancel> createCancelPayment(CancelRequestDTO request,
+    private static List<Cancel> createCancelPayment(CancelPaymentRequestDTO request,
                                                     PaymentResponseDTO response,
                                                     TossPayment tossPayment) {
         return response.getCancels().stream()

@@ -2,7 +2,7 @@ package com.uzem.book_cycle.payment.controller;
 
 import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.exception.PaymentException;
-import com.uzem.book_cycle.payment.dto.CancelRequestDTO;
+import com.uzem.book_cycle.payment.dto.CancelPaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.dto.SaveAmountRequest;
@@ -70,7 +70,7 @@ public class PaymentController {
     @PostMapping("/cancel")
     @ResponseBody
     public ResponseEntity<PaymentResponseDTO> cancelPayment(
-            @RequestBody @Valid CancelRequestDTO request) {
+            @RequestBody @Valid CancelPaymentRequestDTO request) {
         PaymentResponseDTO cancelResponse = paymentService.processCancelPayment(request);
         return ResponseEntity.ok(cancelResponse);
     }
