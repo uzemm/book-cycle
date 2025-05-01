@@ -13,10 +13,9 @@ import java.util.Optional;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    boolean existsByRentalBook(RentalBook rentalBook);
-    boolean existsByRentalBookAndMember(RentalBook rentalBook, Member member);
-    Optional<Reservation> findByRentalBookAndMemberId(RentalBook rentalBook, Long memberId);
-    List<Reservation> findAllByMemberId(Long memberId);
+    boolean existsByRentalBookAndMemberAndIsActiveTrue(RentalBook rentalBook, Member member);
+    Optional<Reservation> findByRentalBookAndMemberIdAndIsActiveTrue(RentalBook rentalBook, Long memberId);
+    List<Reservation> findAllByMemberIdAndIsActiveTrue(Long memberId);
     Optional<Reservation> deleteByRentalBook(RentalBook rentalBook);
     List<Reservation> findAllByRentalBook_RentalStatus(RentalStatus rentalStatus);
     boolean existsByMemberId(Long memberId);

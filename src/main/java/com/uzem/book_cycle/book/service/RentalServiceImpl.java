@@ -87,15 +87,21 @@ public class RentalServiceImpl implements RentalService {
     public ReservationResponseDTO createReservation(RentalBook rentalBook, Long memberId) {
         Member member = findByMemberId(memberId);
         if(!rentalBook.isRented()) {
-            throw new RentalException(BOOK_NOT_RENTED);
+            throw new RentalException(CANNOT_RESERVE_NON_RENTED_BOOK);
         }
-        if(reservationRepository.existsByRentalBookAndMember(rentalBook, member)){ // 예약자 조회
-            throw new RentalException(ALREADY_RESERVED_THIS_BOOK);
+        if(reservationRepository.existsByRentalBookAndMemberAndIsActiveTrue(rentalBook, member)){ // 예약자 조회
+            throw new RentalException(ALREADY_RESERVED_BY_SELF);
         }
-        if(reservationRepository.existsByRentalBook(rentalBook)){
+        // 예약 횟수
+        long reservationCount = rentalBook.getReservations().stream()
+                .filter(Reservation::isActive)
+                .count();
+        if(reservationCount >= 2){ // 예약 꽉 찼을 때
             throw new RentalException(ALREADY_RESERVED_BY_OTHER);
         }
         Reservation reservation = Reservation.create(rentalBook, member); // 연관관계 설정
+        // 예약 순서 설정
+        reservation.updateReservationOrder((int) reservationCount + 1);
         reservationRepository.save(reservation);
 
         return ReservationResponseDTO.from(reservation);
@@ -104,7 +110,7 @@ public class RentalServiceImpl implements RentalService {
     // 예약 + 결제대기 조회
     @Override
     public List<ReservationResponseDTO> getMyReservations(Long memberId) {
-        List<Reservation> reservations = reservationRepository.findAllByMemberId(memberId);
+        List<Reservation> reservations = reservationRepository.findAllByMemberIdAndIsActiveTrue(memberId);
 
         return reservations.stream()
                 .map(ReservationResponseDTO::from)
@@ -114,15 +120,22 @@ public class RentalServiceImpl implements RentalService {
     // 예약 취소
     @Override
     public void cancelMyReservation(RentalBook rentalBook, Long memberId) {
-        Reservation reservation = reservationRepository.findByRentalBookAndMemberId(
+        Reservation reservation = reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(
                 rentalBook, memberId).orElseThrow(
                 () -> new RentalException(RESERVATION_NOT_FOUND));
+
         RentalStatus rentalStatus = reservation.getRentalBook().getRentalStatus();
         if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){
-            reservation.deleteRentalBook(); // 연관관계 끊기
-            reservationRepository.delete(reservation);
+            reservation.cancelReservation();// isActive = false
+            int order = 1;
+            // 예약순번 재정렬
+            for(Reservation activeReservation : rentalBook.getReservations()){
+                if(activeReservation.isActive()){
+                    activeReservation.updateReservationOrder(order++);
+                }
+            }
         } else{
-            throw new RentalException(CANNOT_CANCEL_PENDING_PAYMENT);
+            throw new RentalException(PENDING_PAYMENT_RESERVATION_CANNOT_BE_CANCELED);
         }
     }
 
@@ -136,10 +149,10 @@ public class RentalServiceImpl implements RentalService {
         // 반납 처리 전 도서 상태 변경
         for(RentalHistory rentalHistory : rentalHistories){
             RentalBook rentalBook = rentalHistory.getRentalBook();
-            if(rentalBook.getReservation()!= null) { // 예약자 있음
+            if(!rentalBook.getReservations().isEmpty()) { // 예약자 있음
                 rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
-                rentalBook.getReservation().updatePaymentDeadline(
-                        LocalDate.now().plusDays(1)); // 결제대기기한 설정
+                rentalBook.getReservations().get(0).updatePaymentDeadline(
+                        LocalDate.now().plusDays(1)); // 예약순번 1번 결제대기기한 설정
             } else{
                 rentalBook.updateAvailable(); // 대여가능 변경
             }
@@ -199,7 +212,7 @@ public class RentalServiceImpl implements RentalService {
     @Override
     @Transactional
     public RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Long memberId) {
-        Reservation reservation = reservationRepository.findByRentalBookAndMemberId(
+        Reservation reservation = reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(
                 rentalBook, memberId).orElseThrow(
                 () -> new RentalException(RESERVATION_NOT_FOUND));
         if(reservation.getRentalBook().getRentalStatus() == PENDING_PAYMENT) {
@@ -213,8 +226,18 @@ public class RentalServiceImpl implements RentalService {
         if(reservation.isPendingPayment()) {
             RentalBook rentalBook = reservation.getRentalBook();
             rentalBook.updateAvailable(); // 대여도서 상태 초기화
-            reservation.deleteRentalBook(); // 연관관계 끊기
-            reservationRepository.delete(reservation); // 예약 삭제
+            reservation.cancelReservation();// isActive = false
+            if(!rentalBook.getReservations().isEmpty()) {
+                int order = 1;
+                for(Reservation activeReservation : rentalBook.getReservations()){
+                    if(activeReservation.isActive()){
+                        activeReservation.updateReservationOrder(order++);
+                    }
+                }
+                rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
+                rentalBook.getReservations().get(0).updatePaymentDeadline(
+                        LocalDate.now().plusDays(1)); // 예약순번 1번 결제대기기한 설정
+            }
         }
     }
 
@@ -270,7 +293,7 @@ public class RentalServiceImpl implements RentalService {
         // 연체 이력 리스트 → OverdueDetailDTO 변환
         List<OverdueDetailDTO> detail = rentalHistories.stream()
                 .map(OverdueDetailDTO::from)
-                .collect(Collectors.toList());
+                .toList();
 
         // 주문단위로 묶음
         Map<Long, List<OverdueDetailDTO>> list = detail.stream()
@@ -297,7 +320,7 @@ public class RentalServiceImpl implements RentalService {
         PaymentResponseDTO payment = paymentService.getOverduePayment(rentalHistories.get(0).getOrder());
         List<RentalHistoryResponseDTO> detail = rentalHistories.stream()
                 .map(history -> RentalHistoryResponseDTO.from(history, payment)) // 결제정보 넣어줌
-                .collect(Collectors.toList());
+                .toList();
 
         // 주문단위로 묶음
         Map<Long, List<RentalHistoryResponseDTO>> list = detail.stream()
