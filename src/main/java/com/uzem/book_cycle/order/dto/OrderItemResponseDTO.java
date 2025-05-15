@@ -17,12 +17,14 @@ public class OrderItemResponseDTO {
     private Long bookId;
     private ItemType itemType; // SALE or RENTAL
     private Long itemPrice;
+    private String title;
 
     public static OrderItemResponseDTO from(OrderItem item) {
         return OrderItemResponseDTO.builder()
                 .bookId(item.getId())
                 .itemType(item.getItemType())
                 .itemPrice(item.getItemPrice())
+                .title(item.getTitle())
                 .build();
     }
 
