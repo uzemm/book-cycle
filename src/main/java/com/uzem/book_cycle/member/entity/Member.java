@@ -90,7 +90,7 @@ public class Member extends BaseEntity {
         this.point += point;
     }
 
-    public void rentalCnt() {
+    public void addRental() {
         this.rentalCnt += 1;
     }
 
