@@ -70,5 +70,6 @@ public class Reservation extends BaseEntity {
     public void cancelReservation() {
         this.isActive = false;
         this.reservationOrder = 0;
+        this.paymentDeadline = null;
     }
 }
