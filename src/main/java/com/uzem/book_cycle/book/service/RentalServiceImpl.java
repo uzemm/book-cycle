@@ -86,7 +86,7 @@ public class RentalServiceImpl implements RentalService {
     @Override
     public ReservationResponseDTO createReservation(RentalBook rentalBook, Long memberId) {
         Member member = findByMemberId(memberId);
-        if(!rentalBook.isRented()) {
+        if(!rentalBook.isRented()) { // 대여중 여부
             throw new RentalException(CANNOT_RESERVE_NON_RENTED_BOOK);
         }
         if(reservationRepository.existsByRentalBookAndMemberAndIsActiveTrue(rentalBook, member)){ // 예약자 조회
@@ -102,6 +102,7 @@ public class RentalServiceImpl implements RentalService {
         Reservation reservation = Reservation.create(rentalBook, member); // 연관관계 설정
         // 예약 순서 설정
         reservation.updateReservationOrder((int) reservationCount + 1);
+        rentalBook.addReservation(reservation); // 예약 추가
         reservationRepository.save(reservation);
 
         return ReservationResponseDTO.from(reservation);
@@ -127,13 +128,7 @@ public class RentalServiceImpl implements RentalService {
         RentalStatus rentalStatus = reservation.getRentalBook().getRentalStatus();
         if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){
             reservation.cancelReservation();// isActive = false
-            int order = 1;
-            // 예약순번 재정렬
-            for(Reservation activeReservation : rentalBook.getReservations()){
-                if(activeReservation.isActive()){
-                    activeReservation.updateReservationOrder(order++);
-                }
-            }
+            reorderReservations(rentalBook); // 예약순번 재정렬
         } else{
             throw new RentalException(PENDING_PAYMENT_RESERVATION_CANNOT_BE_CANCELED);
         }
@@ -149,10 +144,12 @@ public class RentalServiceImpl implements RentalService {
         // 반납 처리 전 도서 상태 변경
         for(RentalHistory rentalHistory : rentalHistories){
             RentalBook rentalBook = rentalHistory.getRentalBook();
-            if(!rentalBook.getReservations().isEmpty()) { // 예약자 있음
+            boolean hasReservation =
+                    rentalBook.getReservations().stream().anyMatch(Reservation::isActive);
+            // 예약자 있음
+            if(hasReservation) {
                 rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
-                rentalBook.getReservations().get(0).updatePaymentDeadline(
-                        LocalDate.now().plusDays(1)); // 예약순번 1번 결제대기기한 설정
+                updateReservationPaymentDeadline(rentalBook); // 예약순번 1번 결제기한 부여
             } else{
                 rentalBook.updateAvailable(); // 대여가능 변경
             }
@@ -227,16 +224,31 @@ public class RentalServiceImpl implements RentalService {
             RentalBook rentalBook = reservation.getRentalBook();
             rentalBook.updateAvailable(); // 대여도서 상태 초기화
             reservation.cancelReservation();// isActive = false
-            if(!rentalBook.getReservations().isEmpty()) {
-                int order = 1;
-                for(Reservation activeReservation : rentalBook.getReservations()){
-                    if(activeReservation.isActive()){
-                        activeReservation.updateReservationOrder(order++);
-                    }
-                }
+
+            // 예약자 있음
+            boolean hasReservation = rentalBook.getReservations().stream()
+                    .anyMatch(Reservation::isActive);
+            if(hasReservation) {
+                reorderReservations(rentalBook); // 예약순번 재정렬
                 rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
-                rentalBook.getReservations().get(0).updatePaymentDeadline(
-                        LocalDate.now().plusDays(1)); // 예약순번 1번 결제대기기한 설정
+                updateReservationPaymentDeadline(rentalBook);
+            }
+        }
+    }
+
+    private static void updateReservationPaymentDeadline(RentalBook rentalBook) {
+        LocalDate deadline = LocalDate.now().plusDays(1);
+        rentalBook.getReservations().stream()
+                .filter(r -> r.isActive() && r.getReservationOrder() == 1)
+                .findFirst()
+                .ifPresent(r -> r.updatePaymentDeadline(deadline));
+    }
+
+    private static void reorderReservations(RentalBook rentalBook) {
+        int order = 1;
+        for(Reservation activeReservation : rentalBook.getReservations()){
+            if(activeReservation.isActive()){
+                activeReservation.updateReservationOrder(order++);
             }
         }
     }
