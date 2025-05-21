@@ -2,10 +2,7 @@ package com.uzem.book_cycle.book.service;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.dto.GroupReturnResponseDTO;
-import com.uzem.book_cycle.book.dto.OverdueListResponseDTO;
-import com.uzem.book_cycle.book.dto.RentalHistoryListResponseDTO;
-import com.uzem.book_cycle.book.dto.RentalHistoryResponseDTO;
+import com.uzem.book_cycle.book.dto.*;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.policy.OverduePolicy;
@@ -16,7 +13,6 @@ import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
-import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import com.uzem.book_cycle.payment.type.PaymentPurpose;
 import org.junit.jupiter.api.DisplayName;
@@ -28,12 +24,14 @@ import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -57,9 +55,6 @@ class RentalServiceImplTest {
     private PaymentService paymentService;
 
     @Mock
-    private PaymentRepository paymentRepository;
-
-    @Mock
     private MemberRepository memberRepository;
 
     @InjectMocks
@@ -67,7 +62,7 @@ class RentalServiceImplTest {
 
     @Test
     @DisplayName("대여이력 생성 성공")
-    void createRentalHistory(){
+    void createRentalHistory_success(){
         //given
         Order order = Order.builder().id(2L).build();
         Member member = Member.builder().id(1L).build();
@@ -92,7 +87,7 @@ class RentalServiceImplTest {
 
     @Test
     @DisplayName("연체처리 배치 성공")
-    void successOverdueBatch(){
+    void updateOverdueStatus_success(){
         //given
         RentalHistory rentalHistory = RentalHistory.builder()
                 .rentalDate(LocalDate.now().minusDays(20))
@@ -116,7 +111,7 @@ class RentalServiceImplTest {
 
     @Test
     @DisplayName("결제대기기한 만료 시 취소처리 배치 성공")
-    void successUpdatePendingPayment(){
+    void cancelExpiredPendingReservation_success(){
         //given
         RentalBook rentalBook = RentalBook.builder()
                 .rentalStatus(PENDING_PAYMENT)
@@ -134,12 +129,11 @@ class RentalServiceImplTest {
 
         //then
         assertThat(rentalBook.getRentalStatus()).isEqualTo(AVAILABLE);
-        verify(reservationRepository, times(1)).delete(reservation);
     }
 
     @Test
     @DisplayName("반납처리 성공")
-    void successReturnRental(){
+    void returnRental_success(){
         //given
         Member member = createMember();
         PaymentRequestDTO payment = getPaymentRequestDTO();
@@ -150,7 +144,7 @@ class RentalServiceImplTest {
                 .id(1L)
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(null)
+                .reservations(new ArrayList<>())
                 .build();
         RentalHistory rentalHistory = RentalHistory.builder()
                 .rentalDate(LocalDate.now().minusDays(5))
@@ -179,7 +173,7 @@ class RentalServiceImplTest {
 
     @Test
     @DisplayName("연체도서 반납처리 성공")
-    void successReturnOverdueRental(){
+    void returnOverdueRental_success(){
         //given
         Member member = createMember();
         PaymentRequestDTO paymentRequestDTO = getPaymentRequestDTO();
@@ -187,12 +181,12 @@ class RentalServiceImplTest {
         RentalBook rentalBook1 = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(null)
+                .reservations(new ArrayList<>())
                 .build();
         RentalBook rentalBook2 = RentalBook.builder()
                 .title("대여용 도서")
                 .price(2000L)
-                .reservation(null)
+                .reservations(new ArrayList<>())
                 .build();
         Order order = Order.builder()
                 .id(1L)
@@ -222,7 +216,7 @@ class RentalServiceImplTest {
         assertThat(rentalHistory1.isOverduePayment()).isEqualTo(true);
 
         assertThat(rentalBook1.getRentalStatus()).isEqualTo(AVAILABLE);
-        assertThat(rentalBook1.getReservation()).isNull();
+        assertThat(rentalBook1.getReservations()).isEmpty();
 
         assertThat(paymentRequestDTO.getAmount()).isEqualTo(2000L);
         assertThat(member.getRentalCnt()).isEqualTo(0);
@@ -244,25 +238,27 @@ class RentalServiceImplTest {
     }
 
     @Test
-    @DisplayName("연체도서 반납처리 - 예약자 있을 때")
-    void successReturnOverdueRental_hasReservation(){
+    @DisplayName("연체도서 반납처리 - 예약자 있음")
+    void returnOverdueRental_hasReservation_success(){
         //given
         Member member = createMember();
         PaymentRequestDTO paymentRequestDTO = getPaymentRequestDTO();
         PaymentResponseDTO paymentResponseDTO = getPaymentResponseDTO();
         Reservation reservation = Reservation.builder()
                 .member(member)
+                .reservationOrder(1)
                 .paymentDeadline(null)
+                .isActive(true)
                 .build();
         RentalBook rentalBook = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(null)
+                .reservations(new ArrayList<>())
                 .build();
         Order order = Order.builder()
                 .id(1L)
                 .build();
-        reservation.setRentalBook(rentalBook);
+        rentalBook.addReservation(reservation);
 
         RentalHistory rentalHistory = getRentalHistory(order, rentalBook, member);
         List<RentalHistory> rentalHistories = List.of(rentalHistory);
@@ -282,22 +278,24 @@ class RentalServiceImplTest {
         assertThat(rentalHistory.isOverduePayment()).isEqualTo(true);
 
         assertThat(rentalBook.getRentalStatus()).isEqualTo(PENDING_PAYMENT);
+        assertThat(rentalBook.getReservations().size()).isEqualTo(1);
 
         assertThat(reservation.getPaymentDeadline()).isNotNull();
         assertThat(reservation.getPaymentDeadline()).isEqualTo(LocalDate.now().plusDays(1));
+        assertThat(reservation.getReservationOrder()).isEqualTo(1);
 
         verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
     }
 
     @Test
     @DisplayName("대여현황조회 성공")
-    void getMyRentals(){
+    void getMyRentals_success(){
         //given
         Member member = createMember();
         RentalBook rentalBook = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(null)
+                .reservations(Collections.emptyList())
                 .build();
         Order order = Order.builder()
                 .id(1L)
@@ -319,13 +317,13 @@ class RentalServiceImplTest {
 
     @Test
     @DisplayName("연체현황조회 성공")
-    void getMyOverdue(){
+    void getMyOverdue_success(){
         //given
         Member member = createMember();
         RentalBook rentalBook = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(null)
+                .reservations(Collections.emptyList())
                 .build();
         Order order = Order.builder()
                 .id(1L)
@@ -347,13 +345,13 @@ class RentalServiceImplTest {
 
     @Test
     @DisplayName("대여이력조회 성공")
-    void getMyRentalHistories(){
+    void getMyRentalHistories_success(){
         //given
         Member member = createMember();
         RentalBook rentalBook = RentalBook.builder()
                 .title("대여용 도서")
                 .price(1000L)
-                .reservation(null)
+                .reservations(new ArrayList<>())
                 .build();
         Order order = Order.builder()
                 .id(1L)
@@ -376,8 +374,114 @@ class RentalServiceImplTest {
         assertThat(myRentalHistories.get(0).getRentalHistoryList().get(0).getPayment()).isNotNull();
     }
 
+    @Test
+    @DisplayName("예약하기 성공")
+    void createReservation_success(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = RentalBook.builder()
+                .id(1L)
+                .title("대여용 도서")
+                .price(1000L)
+                .reservations(new ArrayList<>())
+                .rentalStatus(RENTED)
+                .build();
+
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+        //when
+        ReservationResponseDTO reservation = rentalService.createReservation(rentalBook, member.getId());
+
+        //then
+        assertThat(reservation).isNotNull();
+        assertThat(reservation.getReservationOrder()).isEqualTo(1);
+        assertThat(reservation.isActive()).isEqualTo(true);
+        assertThat(reservation.getPaymentDeadline()).isNull();
+    }
+
+    @Test
+    @DisplayName("예약하기 성공 - 순번 2번째")
+    void createReservation_whenSecond_thenSuccess(){
+        //given
+        Member member = createMember();
+        Member member2 = Member.builder()
+                .id(2L)
+                .rentalCnt(1)
+                .build();
+        Reservation reservation1 = Reservation.builder()
+                .id(1L)
+                .member(member)
+                .reservationOrder(1)
+                .paymentDeadline(null)
+                .isActive(true)
+                .build();
+        RentalBook rentalBook = RentalBook.builder()
+                .id(1L)
+                .title("대여용 도서")
+                .price(1000L)
+                .reservations(new ArrayList<>())
+                .rentalStatus(RENTED)
+                .build();
+        rentalBook.addReservation(reservation1);
+        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+        given(memberRepository.findById(2L)).willReturn(Optional.of(member2));
+        given(reservationRepository.existsByRentalBookAndMemberAndIsActiveTrue(rentalBook, member)).willReturn(true);
+
+        //when
+        ReservationResponseDTO result = rentalService.createReservation(rentalBook, member2.getId());
+
+        //then
+        assertThat(result.getReservationOrder()).isEqualTo(2);
+        assertThat(rentalBook.getReservations().size()).isEqualTo(2);
+        assertThat(rentalBook.getReservations().get(0).getReservationOrder()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("예약 취소 - 순번 1 예약자 취소")
+    void cancelReservation_andReorderReservation(){
+        //given
+        Member member = createMember();
+        Member member2 = Member.builder()
+                .id(2L)
+                .rentalCnt(1)
+                .build();
+        Reservation reservation1 = Reservation.builder()
+                .id(1L)
+                .member(member)
+                .reservationOrder(1)
+                .paymentDeadline(null)
+                .isActive(true)
+                .build();
+        Reservation reservation2 = Reservation.builder()
+                .id(2L)
+                .member(member2)
+                .reservationOrder(2)
+                .paymentDeadline(null)
+                .isActive(true)
+                .build();
+        RentalBook rentalBook = RentalBook.builder()
+                .id(1L)
+                .title("대여용 도서")
+                .price(1000L)
+                .reservations(new ArrayList<>())
+                .rentalStatus(RENTED)
+                .build();
+        rentalBook.addReservation(reservation1);
+        rentalBook.addReservation(reservation2);
+        given(reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(rentalBook, member.getId()))
+                .willReturn(Optional.of(reservation1));
+
+        //when
+        rentalService.cancelMyReservation(rentalBook, member.getId());
+
+        //then
+        assertThat(reservation2.getReservationOrder()).isEqualTo(1);
+        assertThat(reservation1.getReservationOrder()).isEqualTo(0);
+        assertThat(reservation1.isActive()).isEqualTo(false);
+    }
+
     private static RentalHistory getRentalHistoryRented(Order order, RentalBook rentalBook, Member member) {
-        RentalHistory rentalHistory = RentalHistory.builder()
+        return RentalHistory.builder()
                 .rentalDate(LocalDate.now().minusDays(5))
                 .returnDate(LocalDate.now().plusDays(14))
                 .rentalStatus(RENTED)
@@ -386,11 +490,10 @@ class RentalServiceImplTest {
                 .order(order)
                 .overdueFee(1000L)
                 .build();
-        return rentalHistory;
     }
 
     private static RentalHistory getRentalHistoryReturned(Order order, RentalBook rentalBook, Member member) {
-        RentalHistory rentalHistory = RentalHistory.builder()
+        return RentalHistory.builder()
                 .rentalDate(LocalDate.now().minusDays(5))
                 .returnDate(LocalDate.now().plusDays(14))
                 .rentalStatus(RETURNED)
@@ -400,29 +503,25 @@ class RentalServiceImplTest {
                 .overdueFee(1000L)
                 .isOverduePayment(true)
                 .build();
-        return rentalHistory;
     }
 
     private static Member createMember() {
-        Member member = Member.builder()
+        return Member.builder()
                 .id(1L)
                 .rentalCnt(1)
                 .build();
-        return member;
     }
 
     private static PaymentRequestDTO getPaymentRequestDTO() {
-        PaymentRequestDTO payment = PaymentRequestDTO.builder()
+        return PaymentRequestDTO.builder()
                 .amount(3000L)
                 .build();
-        return payment;
     }
 
     private static PaymentResponseDTO getPaymentResponseDTO() {
-        PaymentResponseDTO payment = PaymentResponseDTO.builder()
+        return PaymentResponseDTO.builder()
                 .amount(3000L)
                 .paymentPurpose(PaymentPurpose.OVERDUE)
                 .build();
-        return payment;
     }
 }
