@@ -48,9 +48,6 @@ public class Member extends BaseEntity {
 
     private Long point;
 
-    @Column(nullable = true)
-    private String refreshToken;
-
     @Column(nullable = false)
     private boolean isDeleted;
 
@@ -93,7 +90,7 @@ public class Member extends BaseEntity {
         this.point += point;
     }
 
-    public void rentalCnt() {
+    public void addRental() {
         this.rentalCnt += 1;
     }
 
@@ -109,5 +106,17 @@ public class Member extends BaseEntity {
     public void removeRentalHistory(RentalHistory rentalHistory) {
         rentalHistories.remove(rentalHistory);
         rentalHistory.setMember(null);
+    }
+
+    public void deleteMember(){
+        this.isDeleted = true;
+        this.point = 0L;
+    }
+
+    public void cancelOrder(Long rewardPoint, Long usedPoint, int rentalCnt){
+        // 적립 포인트 회수, 차감 포인트 복원
+        this.point = Math.max(0, this.point + usedPoint - rewardPoint);
+        // 대여 횟수 복원
+        this.rentalCnt = Math.max(0, this.rentalCnt - rentalCnt);
     }
 }

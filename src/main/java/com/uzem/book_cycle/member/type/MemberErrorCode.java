@@ -25,7 +25,10 @@ public enum MemberErrorCode implements ErrorCode {
     EMAIL_NOT_VERIFIED("이메일 인증이 완료되지 않았습니다."),
     DUPLICATE_EMAIL("이미 사용 중인 이메일입니다. 다른 이메일을 입력하세요."),
     INSUFFICIENT_POINTS("보유 포인트가 부족합니다."),
-    UNAUTHORIZED("권한이 없습니다.")
+    UNAUTHORIZED("권한이 없습니다."),
+    MEMBER_HAS_ACTIVE_RENTALS("대여 중인 도서가 있으므로 탈퇴할 수 없습니다."),
+    MEMBER_HAS_ACTIVE_RESERVATIONS("예약 중인 도서가 있으므로 탈퇴할 수 없습니다."),
+    MEMBER_HAS_ACTIVE_DELIVERY("배송 중인 주문이 있으므로 탈퇴할 수 없습니다."),
     ;
 
     private String description;

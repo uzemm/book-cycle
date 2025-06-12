@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static com.uzem.book_cycle.order.type.OrderStatus.COMPLETED;
-import static com.uzem.book_cycle.order.type.OrderStatus.PAID_READY;
+import static com.uzem.book_cycle.order.type.OrderStatus.*;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -138,4 +137,7 @@ public class Order extends BaseEntity {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
     }
 
+    public void cancelOrder() {
+        this.orderStatus = CANCELED;
+    }
 }

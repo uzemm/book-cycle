@@ -7,13 +7,13 @@ import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.entity.BaseEntity;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 
@@ -59,8 +59,8 @@ public class RentalBook extends BaseEntity {
     @Column(nullable = false)
     private boolean isPublic;
 
-    @OneToOne(mappedBy = "rentalBook", cascade = CascadeType.ALL) // 양방향
-    private Reservation reservation;
+    @OneToMany(mappedBy = "rentalBook", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Reservation> reservations = new ArrayList<>(); // 양방향
 
     public static RentalBook from(AdminRentalRequestDTO request) {
         return RentalBook.builder()
@@ -126,20 +126,24 @@ public class RentalBook extends BaseEntity {
         return this.rentalStatus == RENTED;
     }
 
-    public void setReservation(Reservation reservation) {
-        this.reservation = reservation;
-    }
-
     public void updateAvailable(){
         this.rentalStatus = AVAILABLE;
     }
 
-    // 예약 차례 결제 대기
+    // 예약 차례가오면 결제 대기로 변경
     public void updatePendingPayment(){
         this.rentalStatus = PENDING_PAYMENT;
     }
 
-    public boolean isReservation(Reservation reservation) {
-        return this.reservation == reservation;
+    /** 도서에 예약 추가 및 연관관계 설정 (양방향 유지용). */
+    public void addReservation(Reservation reservation) {
+        reservations.add(reservation);
+        reservation.setRentalBook(this);
+    }
+
+    /** 도서-예약 간 연관관계 제거 (양방향 관계 정리용). */
+    public void removeReservation(Reservation reservation) {
+        reservations.remove(reservation);
+        reservation.setRentalBook(null);
     }
 }

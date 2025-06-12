@@ -23,6 +23,8 @@ public class ReservationResponseDTO {
     private String title;
     private RentalStatus rentalStatus;
     private LocalDate paymentDeadline;
+    private int reservationOrder;
+    private boolean isActive;
 
     public static ReservationResponseDTO from(Reservation reservation) {
         return ReservationResponseDTO.builder()
@@ -33,6 +35,8 @@ public class ReservationResponseDTO {
                 .title(reservation.getRentalBook().getTitle())
                 .rentalStatus(reservation.getRentalBook().getRentalStatus())
                 .paymentDeadline(reservation.getPaymentDeadline())
+                .reservationOrder(reservation.getReservationOrder())
+                .isActive(reservation.isActive())
                 .build();
     }
 

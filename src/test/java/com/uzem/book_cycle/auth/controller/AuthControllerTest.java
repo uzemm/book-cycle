@@ -6,7 +6,7 @@ import com.uzem.book_cycle.auth.dto.RefreshRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpResponseDTO;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
-import com.uzem.book_cycle.auth.service.AuthService;
+import com.uzem.book_cycle.auth.service.AuthServiceImpl;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
 import com.uzem.book_cycle.auth.email.service.EmailService;
 import com.uzem.book_cycle.member.repository.MemberRepository;
@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class AuthControllerTest {
 
     @MockitoBean
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     @MockitoBean
     private MemberRepository repository;

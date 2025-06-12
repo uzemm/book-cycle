@@ -15,7 +15,6 @@ import com.uzem.book_cycle.member.type.MemberErrorCode;
 import com.uzem.book_cycle.member.type.MemberStatus;
 import com.uzem.book_cycle.redis.RedisUtil;
 import com.uzem.book_cycle.security.token.TokenDTO;
-import com.uzem.book_cycle.security.token.TokenErrorCode;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.DisplayName;
@@ -77,7 +76,7 @@ class AuthServiceTest {
     private Claims claims;
 
     @InjectMocks
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     @Test
     @DisplayName("회원가입 성공")
@@ -279,7 +278,7 @@ class AuthServiceTest {
                 .refreshToken("refreshToken")
                 .build();
 
-        given(memberRepository.findByEmail(request.getEmail())).
+        given(memberRepository.findByEmailAndIsDeletedFalse(request.getEmail())).
                 willReturn(Optional.of(member));
         given(passwordEncoder.matches(request.getPassword(), member.getPassword())).
                 willReturn(true);
@@ -301,7 +300,7 @@ class AuthServiceTest {
     void fail_login(){
         //given
         LoginRequestDTO request = new LoginRequestDTO("test@uzem.com", "12345678");
-        given(memberRepository.findByEmail(request.getEmail())).willReturn(Optional.empty());
+        given(memberRepository.findByEmailAndIsDeletedFalse(request.getEmail())).willReturn(Optional.empty());
 
         //when
         //then

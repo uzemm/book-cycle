@@ -9,13 +9,13 @@ public enum RentalErrorCode implements ErrorCode {
     ALREADY_RENTED("이미 대여 중인 도서입니다."),
     OVERDUE_RENTAL_BOOK("연체 중인 도서는 대여할 수 없습니다."),
     PENDING_PAYMENT_RENTAL_BOOK("결제 대기 중인 도서는 대여할 수 없습니다."),
-    ALREADY_RESERVED_THIS_BOOK("이미 예약된 도서입니다."),
+    ALREADY_RESERVED_BY_SELF("이미 예약된 도서입니다."),
     ALREADY_RESERVED_BY_OTHER("다른 예약자가 존재하는 도서입니다."),
-    BOOK_NOT_RENTED("대여 상태가 아닌 도서는 예약이 불가능합니다."),
+    CANNOT_RESERVE_NON_RENTED_BOOK("대여 중인 도서만 예약할 수 있습니다."),
     RESERVATION_NOT_FOUND("예약 도서를 찾을 수 없습니다."),
     RENTAL_HISTORY_NOT_FOUND("대여 이력을 찾을 수 없습니다."),
-    CANNOT_CANCEL_PENDING_PAYMENT("결제 대기 상태 예약은 취소할 수 없습니다. "),
-    RENTAL_HISTORY_STATUS_MISMATCH("묶음 반납 도서의 상태가 일치하지 않습니다."),
+    PENDING_PAYMENT_RESERVATION_CANNOT_BE_CANCELED("결제 대기 상태 예약은 취소할 수 없습니다. "),
+    RENTAL_HISTORY_STATUS_MISMATCH("묶음 반납 도서의 대여상태가 일치하지 않습니다."),
     INVALID_RENTAL_STATUS("대여상태가 일치하지 않습니다.")
     ;
 

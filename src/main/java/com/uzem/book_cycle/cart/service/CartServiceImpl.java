@@ -67,11 +67,18 @@ public class CartServiceImpl implements CartService {
         if(EnumSet.of(RENTED, OVERDUE).contains(rentalBook.getRentalStatus())){
             throw new CartException(RENTED_BOOK_CART_ADD_FAILED);
         }
-        // 결제 대기 도서 내 예약인지 검증
-        if(rentalBook.getRentalStatus() == PENDING_PAYMENT &&
-                !rentalBook.getReservation().getMember().getId().equals(memberId)) {
-            throw new CartException(RESERVATION_NOT_OWNED);
+        // 결제대기상태 확인
+        if(rentalBook.getRentalStatus() != PENDING_PAYMENT){
+            throw new CartException(NOT_PENDING_PAYMENT_BOOK);
         }
+
+        // 결제 대기 도서 내 예약인지(1순위) 검증
+        rentalBook.getReservations().stream()
+                .filter(reservation -> reservation.isActive()
+                        && reservation.getReservationOrder() == 1
+                        && reservation.getMember().getId().equals(memberId))
+                .findFirst()
+                .orElseThrow(() -> new CartException(RESERVATION_NOT_OWNED));
     }
 
     private void validDuplicateCartItem(CartRequestDTO request, Long memberId) {

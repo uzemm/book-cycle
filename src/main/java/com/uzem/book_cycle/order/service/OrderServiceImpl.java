@@ -4,11 +4,12 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.SalesRepository;
-import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.service.RentalServiceImpl;
 import com.uzem.book_cycle.cart.entity.Cart;
 import com.uzem.book_cycle.cart.repository.CartRepository;
 import com.uzem.book_cycle.exception.*;
+import com.uzem.book_cycle.order.dto.CancelOrderDTO;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.order.dto.OrderRequestDTO;
@@ -17,7 +18,11 @@ import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.order.entity.OrderItem;
 import com.uzem.book_cycle.order.repository.OrderRepository;
 import com.uzem.book_cycle.order.type.ItemType;
+import com.uzem.book_cycle.payment.dto.CancelPaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
+import com.uzem.book_cycle.payment.entity.TossPayment;
+import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -35,10 +40,13 @@ import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.admin.type.SalesErrorCode.*;
 import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
 import static com.uzem.book_cycle.cart.type.CartErrorCode.CART_NOT_FOUND;
+import static com.uzem.book_cycle.cart.type.CartErrorCode.RESERVATION_NOT_OWNED;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
 import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
 import static com.uzem.book_cycle.order.type.ItemType.SALE;
 import static com.uzem.book_cycle.order.type.OrderErrorCode.*;
+import static com.uzem.book_cycle.order.type.ShippingStatus.PREPARING;
+import static com.uzem.book_cycle.payment.type.PaymentErrorCode.PAYMENT_NOT_FOUND;
 
 @Slf4j
 @Service
@@ -50,7 +58,7 @@ public class OrderServiceImpl implements OrderService{
     private final AdminRentalRepository rentalRepository;
     private final PaymentService paymentService;
     private final RentalServiceImpl rentalService;
-    private final ReservationRepository reservationRepository;
+    private final PaymentRepository paymentRepository;
 
     private static final double REWARD_POINT = 0.01;
     private final CartRepository cartRepository;
@@ -65,7 +73,8 @@ public class OrderServiceImpl implements OrderService{
 
         // 주문 생성 및 저장
         Order order = createOrder(orderRequestDTO, member);
-        paymentService.processPayment(payment); // 결제 승인
+        PaymentResponseDTO paymentResponseDTO
+                = paymentService.processPayment(payment);// 결제 승인
         order.orderStatusCompleted(); // 주문 상태 변경
 
         // 판매, 대여 도서 상태 변경 및 저장
@@ -76,18 +85,17 @@ public class OrderServiceImpl implements OrderService{
         if(orderRequestDTO.isCartOrder()){
             cartRepository.deleteByIdInAndMember(orderRequestDTO.getCartIds(), member);
         }
-        log.info("Deleted {} cart items for memberId {}",
-                orderRequestDTO.getCartIds().size(), member.getId());
-
-
+        //log.info("Deleted {} cart items for memberId {}",
+        //        orderRequestDTO.getCartIds().size(), member.getId());
 
         // 응답 DTO 변환 후 반환
-        return OrderResponseDTO.from(order);
+        return OrderResponseDTO.from(order, paymentResponseDTO);
     }
 
     @Transactional
     public Order createOrder(OrderRequestDTO requestDTO, Member member) {
-        if(!requestDTO.isCartOrder()) {
+        if(!requestDTO.isCartOrder() &&
+                (requestDTO.getOrderItems() == null || requestDTO.getOrderItems().isEmpty())) {
             throw new OrderException(ORDER_ITEM_NOT_FOUND);
         }
 
@@ -137,6 +145,7 @@ public class OrderServiceImpl implements OrderService{
     public void updateRentalBookStatusToRented(List<OrderItem> orderItems,
                                          Member member,
                                         Order order, LocalDate now) {
+        // 대여도서 조회
         List<RentalBook> rentalBooks = orderItems.stream()
                 .filter(item -> item.getItemType() == RENTAL)
                 .map(OrderItem::getRentalBook)
@@ -144,15 +153,30 @@ public class OrderServiceImpl implements OrderService{
                 .collect(Collectors.toList());
 
         rentalBooks.forEach(rental -> {
-            rental.rentalStatusRented(); // 대여상태 변경
+            rental.rentalStatusRented(); // 대여중으로 상태 변경
             rentalService.createRentalHistory(rental, member, order, now); // 대여 이력 생성
-            if(rental.getReservation() != null){
-                reservationRepository.deleteByRentalBook(rental); // 확정 예약 삭제
-            }
-            member.rentalCnt(); // 대여 권수 ++
+            // 현재 예약자(1순위, 나) 비활성화
+            rental.getReservations().stream()
+                    .filter(reservation -> reservation.isActive()
+                            && reservation.getReservationOrder() == 1
+                            && reservation.getMember().getId().equals(member.getId()))
+                    .findFirst()
+                    .ifPresent(Reservation::cancelReservation);
+
+            reorderReservations(rental); // 남은 예약자 순번 재정렬
+            member.addRental(); // 대여 권수 ++
         });
 
         rentalRepository.saveAll(rentalBooks);
+    }
+
+    private static void reorderReservations(RentalBook rental) {
+        int seq = 1;
+        for(Reservation activeReservation : rental.getReservations()){
+            if(activeReservation.isActive()){
+                activeReservation.updateReservationOrder(seq++);
+            }
+        }
     }
 
     public void updateSalesBookStatusToSold(List<OrderItem> orderItems) {
@@ -206,7 +230,8 @@ public class OrderServiceImpl implements OrderService{
             RentalBook rentalBook = rentalRepository.findById(bookId)
                     .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
             // 도서 상태 검증
-            validateRentalBookStatus(rentalBook, member);
+            validateRentalBookStatus(rentalBook);
+            validateReservationOwned(rentalBook, member);
             return OrderItem.fromRental(order, rentalBook);
         }
     }
@@ -216,14 +241,23 @@ public class OrderServiceImpl implements OrderService{
             throw new SalesException(ALREADY_SOLD_OUT_SALE_BOOK);
         }
     }
-    private static void validateRentalBookStatus(RentalBook rentalBook, Member member) {
+    private static void validateRentalBookStatus(RentalBook rentalBook) {
         if(rentalBook.getRentalStatus() == RENTED){ // 대여중
             throw new RentalException(ALREADY_RENTED);
         } else if(rentalBook.getRentalStatus() == OVERDUE){ // 연체중
             throw new RentalException(OVERDUE_RENTAL_BOOK);
-        } else if(rentalBook.getRentalStatus() == PENDING_PAYMENT &&
-        !rentalBook.getReservation().getMember().equals(member)){ // 결제 대기중
-            throw new RentalException(PENDING_PAYMENT_RENTAL_BOOK);
+        }
+    }
+
+    private static void validateReservationOwned(RentalBook rentalBook, Member member) {
+        if(rentalBook.getRentalStatus() == PENDING_PAYMENT){
+            // 결제 대기 도서 내 예약인지 검증
+            rentalBook.getReservations().stream()
+                    .filter(reservation -> reservation.isActive()
+                            && reservation.getReservationOrder() == 1
+                            && reservation.getMember().getId().equals(member.getId()))
+                    .findFirst()
+                    .orElseThrow(() -> new CartException(RESERVATION_NOT_OWNED));
         }
     }
 
@@ -252,10 +286,63 @@ public class OrderServiceImpl implements OrderService{
     }
 
     // 주문 완료
-    public OrderResponseDTO getOrders(Long orderId){
+    public OrderResponseDTO getOrderDetail(Long orderId) {
         Order order = orderRepository.findById(orderId).orElseThrow(
                 () -> new OrderException(ORDER_NOT_FOUND));
-        return OrderResponseDTO.from(order);
+        TossPayment tossPayment = paymentRepository.findByOrderId(orderId).orElseThrow(
+                () -> new PaymentException(PAYMENT_NOT_FOUND));
+        PaymentResponseDTO paymentResponseDTO = PaymentResponseDTO.from(tossPayment);
+        return OrderResponseDTO.from(order, paymentResponseDTO);
+    }
+
+    // 주문 취소
+    public CancelOrderDTO cancelMyOrder(Long memberId, Long orderId, CancelPaymentRequestDTO requestDTO) {
+        // 주문 조회
+        Order order = orderRepository.findByIdAndShippingStatus(orderId, PREPARING)
+                .orElseThrow(() -> new OrderException(ORDER_STATUS_SHIPPED));
+        // 결제 취소
+        PaymentResponseDTO paymentResponseDTO = paymentService.processCancelPayment(requestDTO);
+        // 주문 상태 변경 CANCELED
+        order.cancelOrder();
+
+        // 회원 조회
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
+        // 대여도서 개수 카운트
+        int rentalCnt = (int) order.getOrderItems().stream()
+                .filter(item -> item.getItemType() == RENTAL)
+                .count();
+        // 포인트, 카운트 복원
+        member.cancelOrder(order.getRewardPoint(), order.getUsedPoint(), rentalCnt);
+
+        //도서 상태 복원
+        for(OrderItem item : order.getOrderItems()){
+            if(item.getItemType() == SALE){
+                item.getSalesBook().cancelSalesStatusAvailable();
+            } else{
+                restoreRentalBookStatus(item.getRentalBook());
+            }
+        }
+        return CancelOrderDTO.from(order, paymentResponseDTO);
+    }
+
+    private static void restoreRentalBookStatus(RentalBook rentalBook) {
+        boolean hasReservation = rentalBook.getReservations().stream().anyMatch(Reservation::isActive);
+        if(hasReservation) { // 예약자 있음
+            rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
+
+            // 예약순번 1번 결제기한 부여
+            rentalBook.getReservations().stream()
+                    .filter(reservation -> reservation.isActive()
+                            && reservation.getReservationOrder() == 1)
+                    .findFirst()
+                    .ifPresent(reservation ->
+                            reservation.updatePaymentDeadline(LocalDate.now()
+                                    .plusDays(1))
+                    );
+        } else{
+            rentalBook.updateAvailable(); // 대여가능 변경
+        }
     }
 
     // 회원 조회
