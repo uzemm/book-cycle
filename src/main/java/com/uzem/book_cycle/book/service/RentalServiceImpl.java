@@ -12,12 +12,15 @@ import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
+import com.uzem.book_cycle.notification.entity.Notification;
+import com.uzem.book_cycle.notification.repository.NotificationRepository;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
+import static com.uzem.book_cycle.notification.type.NotificationType.RESERVATION_FIRST;
 
 @Slf4j
 @Service
@@ -42,6 +46,8 @@ public class RentalServiceImpl implements RentalService {
     private final ReservationRepository reservationRepository;
     private final PaymentService paymentService;
     private final MemberRepository memberRepository;
+    private final NotificationRepository notificationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // 대여 이력 생성
     public void createRentalHistory(RentalBook rentalBook, Member member,
@@ -120,18 +126,49 @@ public class RentalServiceImpl implements RentalService {
 
     // 예약 취소
     @Override
+    @Transactional
     public void cancelMyReservation(RentalBook rentalBook, Long memberId) {
-        Reservation reservation = reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(
-                rentalBook, memberId).orElseThrow(
-                () -> new RentalException(RESERVATION_NOT_FOUND));
+        Reservation reservation = getReservation(rentalBook, memberId);
 
         RentalStatus rentalStatus = reservation.getRentalBook().getRentalStatus();
-        if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){
-            reservation.cancelReservation();// isActive = false
+        if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){ // 대여 or 연체
+            reservation.cancelReservation();// isActive = false, 예약순번 초기화
             reorderReservations(rentalBook); // 예약순번 재정렬
+            notifyNextReservationIfExists(rentalBook);
         } else{
             throw new RentalException(PENDING_PAYMENT_RESERVATION_CANNOT_BE_CANCELED);
         }
+    }
+
+    private void notifyNextReservationIfExists(RentalBook rentalBook) {
+        // 알림 저장
+        reservationRepository
+                .findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(
+                        rentalBook, PENDING_PAYMENT)
+                .ifPresent(next -> {
+                    notificationRepository.save(Notification.builder()
+                                    .member(next.getMember())
+                                    .rentalBook(next.getRentalBook())
+                                    .type(RESERVATION_FIRST)
+                                    .message(RESERVATION_FIRST.getDefaultMessage())
+                            .build()
+                    );
+
+                    // 웹소켓 알림 전송
+                    messagingTemplate.convertAndSend(
+                            "/sub/member/" + next.getMember().getId(),
+                            Notification.builder()
+                                    .type(RESERVATION_FIRST)
+                                    .message(RESERVATION_FIRST.getDefaultMessage())
+                            .build()
+                    );
+                });
+    }
+
+    private Reservation getReservation(RentalBook rentalBook, Long memberId) {
+        return reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(
+                rentalBook, memberId).orElseThrow(
+                () -> new RentalException(RESERVATION_NOT_FOUND));
     }
 
     // 반납하기
@@ -159,6 +196,14 @@ public class RentalServiceImpl implements RentalService {
         RentalStatus rentalStatus = validGroupRentalStatus(rentalHistories);
         if(rentalStatus == RENTED){
             returnAllRentals(member, rentalHistories); // 반납처리
+            for(RentalHistory rentalHistory : rentalHistories){
+                RentalBook rentalBook = rentalHistory.getRentalBook();
+                boolean hasReservation =
+                        rentalBook.getReservations().stream().anyMatch(Reservation::isActive);
+                if(hasReservation){
+                    notifyNextReservationIfExists(rentalBook); // 알림전송
+                }
+            }
             return GroupReturnResponseDTO.from(rentalHistories, null);
         } else{ // 연체 상태
             long totalOverdueFee = rentalHistories.stream()
@@ -209,9 +254,7 @@ public class RentalServiceImpl implements RentalService {
     @Override
     @Transactional
     public RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Long memberId) {
-        Reservation reservation = reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(
-                rentalBook, memberId).orElseThrow(
-                () -> new RentalException(RESERVATION_NOT_FOUND));
+        Reservation reservation = getReservation(rentalBook, memberId);
         if(reservation.getRentalBook().getRentalStatus() == PENDING_PAYMENT) {
             cancelPendingReservation(reservation);
         }
@@ -229,11 +272,16 @@ public class RentalServiceImpl implements RentalService {
             boolean hasReservation = rentalBook.getReservations().stream()
                     .anyMatch(Reservation::isActive);
             if(hasReservation) {
-                reorderReservations(rentalBook); // 예약순번 재정렬
-                rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
-                updateReservationPaymentDeadline(rentalBook);
+                activateNextReservationAndNotify(rentalBook); // 예약자 순번 재정렬 및 알림 전송
             }
         }
+    }
+
+    private void activateNextReservationAndNotify(RentalBook rentalBook) {
+        reorderReservations(rentalBook); // 예약순번 재정렬
+        rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
+        updateReservationPaymentDeadline(rentalBook);
+        notifyNextReservationIfExists(rentalBook);
     }
 
     private static void updateReservationPaymentDeadline(RentalBook rentalBook) {

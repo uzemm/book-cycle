@@ -19,4 +19,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Optional<Reservation> deleteByRentalBook(RentalBook rentalBook);
     List<Reservation> findAllByRentalBook_RentalStatus(RentalStatus rentalStatus);
     boolean existsByMemberId(Long memberId);
+    Optional<Reservation> findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(
+            RentalBook rentalBook, RentalStatus rentalStatus);
 }

@@ -28,7 +28,7 @@ public class Reservation extends BaseEntity {
 
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rental_book_id", nullable = false, unique = true)
+    @JoinColumn(name = "rental_book_id", nullable = false)
     private RentalBook rentalBook;
 
     private LocalDate paymentDeadline;
