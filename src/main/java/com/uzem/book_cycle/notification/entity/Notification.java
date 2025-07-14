@@ -35,4 +35,6 @@ public class Notification extends BaseEntity {
     @Column(nullable = false)
     private boolean isRead; // false
 
+    private Integer overdueDay; // nullable, 연체알림일 경우에만
+
 }

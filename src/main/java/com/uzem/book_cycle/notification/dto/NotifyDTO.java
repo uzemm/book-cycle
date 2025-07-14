@@ -14,4 +14,10 @@ public class NotifyDTO {
 
     private NotificationType type;
     private String message;
+
+    public static NotifyDTO of(NotificationType type, String message) {
+        return NotifyDTO.builder()
+                .type(type)
+                .message(message).build();
+    }
 }

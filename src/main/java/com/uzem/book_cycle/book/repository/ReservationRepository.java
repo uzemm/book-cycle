@@ -7,6 +7,7 @@ import com.uzem.book_cycle.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,4 +22,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     boolean existsByMemberId(Long memberId);
     Optional<Reservation> findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(
             RentalBook rentalBook, RentalStatus rentalStatus);
+    boolean existsByMemberAndRentalBookAndPaymentDeadline(Member member,
+                                                          RentalBook rentalBook,
+                                                          LocalDate paymentDeadline);
 }
