@@ -5,11 +5,11 @@ import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.*;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.book.policy.OverduePolicy;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
+import com.uzem.book_cycle.notification.service.NotificationServiceImpl;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
@@ -33,8 +33,7 @@ import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -46,9 +45,6 @@ class RentalServiceImplTest {
     private RentalHistoryRepository rentalHistoryRepository;
 
     @Mock
-    private OverduePolicy overduePolicy;
-
-    @Mock
     private ReservationRepository reservationRepository;
 
     @Mock
@@ -56,6 +52,9 @@ class RentalServiceImplTest {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private NotificationServiceImpl notificationService;
 
     @InjectMocks
     private RentalServiceImpl rentalService;
@@ -83,30 +82,6 @@ class RentalServiceImplTest {
         assertEquals(order, captor.getValue().getOrder());
         assertEquals(member, captor.getValue().getMember());
         assertEquals(rentalBook, captor.getValue().getRentalBook());
-    }
-
-    @Test
-    @DisplayName("연체처리 배치 성공")
-    void updateOverdueStatus_success(){
-        //given
-        RentalHistory rentalHistory = RentalHistory.builder()
-                .rentalDate(LocalDate.now().minusDays(20))
-                .returnDate(LocalDate.now().minusDays(6))
-                .rentalStatus(RENTED)
-                .price(1000L)
-                .build();
-
-        List<RentalHistory> rentalHistories = List.of(rentalHistory);
-        given(rentalHistoryRepository.findAllByRentalStatus(RENTED)).willReturn(rentalHistories);
-        given(overduePolicy.calculateOverdue(any(), anyLong())).willReturn(6000L);
-
-        //when
-        rentalService.updateStatusOverdue();
-
-        //then
-        assertThat(rentalHistory.getRentalStatus()).isEqualTo(RentalStatus.OVERDUE);
-        assertThat(rentalHistory.getOverdueFee()).isEqualTo(6000L);
-        verify(overduePolicy, times(1)).calculateOverdue(rentalHistory, 6);
     }
 
     @Test
@@ -267,6 +242,8 @@ class RentalServiceImplTest {
         given(rentalHistoryRepository.findAllByOrderId(order.getId()))
                 .willReturn(List.of(rentalHistory));
         given(paymentService.processOverduePayment(paymentRequestDTO)).willReturn(paymentResponseDTO);
+        given(reservationRepository.findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(rentalBook, PENDING_PAYMENT))
+                .willReturn(Optional.of(reservation));
 
         //when
         GroupReturnResponseDTO groupReturnResponseDTO = rentalService.returnRental(
@@ -285,6 +262,7 @@ class RentalServiceImplTest {
         assertThat(reservation.getReservationOrder()).isEqualTo(1);
 
         verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
+        verify(notificationService).notifyNextReservationIfExists(rentalBook);
     }
 
     @Test
@@ -470,6 +448,8 @@ class RentalServiceImplTest {
         rentalBook.addReservation(reservation2);
         given(reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(rentalBook, member.getId()))
                 .willReturn(Optional.of(reservation1));
+        given(reservationRepository.findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(rentalBook, PENDING_PAYMENT))
+                .willReturn(Optional.of(reservation2));
 
         //when
         rentalService.cancelMyReservation(rentalBook, member.getId());
@@ -478,6 +458,7 @@ class RentalServiceImplTest {
         assertThat(reservation2.getReservationOrder()).isEqualTo(1);
         assertThat(reservation1.getReservationOrder()).isEqualTo(0);
         assertThat(reservation1.isActive()).isEqualTo(false);
+        verify(notificationService).notifyNextReservationIfExists(rentalBook);
     }
 
     private static RentalHistory getRentalHistoryRented(Order order, RentalBook rentalBook, Member member) {
