@@ -1,11 +1,15 @@
 package com.uzem.book_cycle.book.service;
 
+import com.uzem.book_cycle.event.OverdueFeeEvent;
+import com.uzem.book_cycle.event.RentalOverdueEvent;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.policy.OverduePolicy;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
-import com.uzem.book_cycle.notification.service.NotificationService;
+import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.notification.type.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +18,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
-import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
 
 @Slf4j
 @Service
@@ -23,27 +26,43 @@ import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
 public class OverdueServiceImpl implements OverdueService{
 
     private final RentalHistoryRepository rentalHistoryRepository;
-    private final NotificationService notificationService;
     private final OverduePolicy overduePolicy;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     // 연체 배치 처리 대여중 -> 연체
     @Override
-    public void updateStatusOverdue(LocalDate today) {
-        List<RentalHistory> rentalHistories = rentalHistoryRepository.findAllByRentalStatus(RENTED);
+    public void processOverdue(List<RentalHistory> rentalList) {
 
-        for(RentalHistory rentalHistory : rentalHistories) {
+        Member member = rentalList.get(0).getMember();
+        String title = rentalList.get(0).getRentalBook().getTitle();
+        int other = rentalList.size() - 1;
+
+        String message = NotificationType.RENTAL_OVERDUE.format(title, other);
+
+        boolean hasOverdue = false;
+
+        for(RentalHistory rentalHistory : rentalList) {
             try{
-                processOverdue(rentalHistory, today);
+                    rentalHistory.statusOverdue(); // rented -> overdue
+                    hasOverdue = true;
             } catch (Exception e){
                 log.warn("자동 연체 처리 실패 - 대여이력ID: {}, 이유: {}",
                         rentalHistory.getId(), e.getMessage());
             }
         }
+        // 연체 도서가 하나라도 있으면 알림 한 번만 전송
+        if(hasOverdue) {
+           eventPublisher.publishEvent(
+                   new RentalOverdueEvent(
+                           member, rentalList, message
+                   )
+           );
+        }
     }
 
     @Override
-    public void calculateOverdueFee(LocalDate today) {
+    public void processOverdueFees(LocalDate today) {
         List<RentalHistory> overdueList = rentalHistoryRepository.findAllByRentalStatus(OVERDUE);
 
         for(RentalHistory rentalHistory : overdueList) {
@@ -58,14 +77,6 @@ public class OverdueServiceImpl implements OverdueService{
         }
     }
 
-    private void processOverdue(RentalHistory rentalHistory, LocalDate now) {
-        LocalDate returnDate = rentalHistory.getReturnDate();
-        if(returnDate.isBefore(now)) {
-            rentalHistory.statusOverdue(); // rented -> overdue
-            sendOverdueNotification(rentalHistory); // 알림 전송
-        }
-    }
-
     // 연체료 계산
     public long calculateOverdueFee(RentalHistory rentalHistory, LocalDate now) {
         LocalDate returnDate = rentalHistory.getReturnDate();
@@ -74,14 +85,15 @@ public class OverdueServiceImpl implements OverdueService{
         return  overduePolicy.calculateOverdue(overdueDays);
     }
 
-    private void sendOverdueNotification(RentalHistory rentalHistory) {
-        notificationService.notifyRentalOverdue(rentalHistory);
-    }
-
     // 연체료 알림 전송
     private void sendOverdueDaysNotification(RentalHistory rentalHistory, LocalDate now) {
         LocalDate returnDate = rentalHistory.getReturnDate();
         long overdueDays = ChronoUnit.DAYS.between(returnDate, now);
-        notificationService.notifyRentalOverdueFee(rentalHistory, overdueDays);
+
+        eventPublisher.publishEvent(
+                new OverdueFeeEvent(
+                        rentalHistory, overdueDays
+                )
+        );
     }
 }
