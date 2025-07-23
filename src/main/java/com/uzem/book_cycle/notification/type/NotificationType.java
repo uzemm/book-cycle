@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum NotificationType {
-    RESERVATION_FIRST("예약하신 '%s' 도서 순번이 되었습니다. 24시간 내에 결제해 주세요.", null),
+    RESERVATION_FIRST("예약하신 '%s' 대여 순번이 되었습니다. 24시간 내에 결제해 주세요.", null),
 
     RENTAL_OVERDUE("'%s'의 도서의 반납일이 지나 연체가 발생했습니다. 빠른 반납 부탁드립니다.",
             "'%s' 외 %d권의 도서의 반납일이 지나 연체가 발생했습니다. 빠른 반납 부탁드립니다."),

@@ -7,18 +7,19 @@ import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
-import com.uzem.book_cycle.notification.service.NotificationService;
+import com.uzem.book_cycle.notification.type.NotificationType;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +41,7 @@ public class RentalServiceImpl implements RentalService {
     private final ReservationRepository reservationRepository;
     private final PaymentService paymentService;
     private final MemberRepository memberRepository;
-    private final NotificationService notificationService;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 대여 이력 생성
     public void createRentalHistory(RentalBook rentalBook, Member member,
@@ -95,7 +96,11 @@ public class RentalServiceImpl implements RentalService {
         if(rentalStatus == RENTED || rentalStatus == RentalStatus.OVERDUE){ // 대여 or 연체
             reservation.cancelReservation();// isActive = false, 예약순번 초기화
             reorderReservations(rentalBook); // 예약순번 재정렬
-            notificationService.notifyNextReservationIfExists(rentalBook);
+            String message = NotificationType.RENTAL_OVERDUE.format(
+                    rentalBook.getTitle(), 0);
+            //알림전송
+            eventPublisher.publishEvent(
+                    new ReservationFirstEvent(rentalBook, message));
         } else{
             throw new RentalException(PENDING_PAYMENT_RESERVATION_CANNOT_BE_CANCELED);
         }
@@ -161,7 +166,11 @@ public class RentalServiceImpl implements RentalService {
             boolean hasReservation =
                     rentalBook.getReservations().stream().anyMatch(Reservation::isActive);
             if(hasReservation){
-                notificationService.notifyNextReservationIfExists(rentalBook); // 알림전송
+                String message = NotificationType.RENTAL_OVERDUE.format(
+                        rentalBook.getTitle(), 0);
+                //알림전송
+                eventPublisher.publishEvent(
+                        new ReservationFirstEvent(rentalBook, message));
             }
         }
     }
@@ -223,7 +232,11 @@ public class RentalServiceImpl implements RentalService {
         reorderReservations(rentalBook); // 예약순번 재정렬
         rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
         updateReservationPaymentDeadline(rentalBook);
-        notificationService.notifyNextReservationIfExists(rentalBook);
+        //알림 전송
+        String message = NotificationType.RENTAL_OVERDUE.format(
+                rentalBook.getTitle(), 0);
+        eventPublisher.publishEvent(
+                new ReservationFirstEvent(rentalBook, message));
     }
 
     private static void updateReservationPaymentDeadline(RentalBook rentalBook) {
@@ -244,19 +257,12 @@ public class RentalServiceImpl implements RentalService {
     }
 
     // 결제대기 기간 만료 배치
-    @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
-    public void updateCancelPendingPayment() {
-        LocalDate now = LocalDate.now();
-        List<Reservation> reservations = reservationRepository
-                .findAllByRentalBook_RentalStatus(PENDING_PAYMENT);
+    public void updateCancelPendingPayment(List<Reservation> reservations) {
 
         for (Reservation reservation : reservations) {
             try {
-                LocalDate paymentDeadline = reservation.getPaymentDeadline();
-                if (paymentDeadline.isBefore(now)) {
                     cancelPendingReservation(reservation); // 결제대기 취소
-                }
             } catch (Exception e) {
                 log.warn("자동 예약 취소 실패 - 예약ID: {}, 이유: {}",
                         reservation.getId(), e.getMessage());

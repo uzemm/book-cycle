@@ -1,8 +1,11 @@
-package com.uzem.book_cycle.notification;
+package com.uzem.book_cycle.event.listener;
 
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.dto.NotifyDTO;
 import com.uzem.book_cycle.notification.entity.Notification;
@@ -11,7 +14,6 @@ import com.uzem.book_cycle.notification.type.NotificationType;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.event.OverdueFeeEvent;
 import com.uzem.book_cycle.event.RentalOverdueEvent;
-import com.uzem.book_cycle.event.listener.RentalOverdueEventListener;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,10 +27,12 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
 import static com.uzem.book_cycle.admin.type.RentalStatus.PENDING_PAYMENT;
 import static com.uzem.book_cycle.notification.type.NotificationType.RENTAL_OVERDUE;
+import static com.uzem.book_cycle.notification.type.NotificationType.RESERVATION_FIRST;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -43,6 +47,9 @@ class RentalOverdueEventListenerTest {
 
     @Mock
     private NotificationRepository notificationRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
 
     @Mock
     private SimpMessagingTemplate messagingTemplate;
@@ -168,6 +175,48 @@ class RentalOverdueEventListenerTest {
         Notification saved = notificationCaptor.getValue();
         assertThat(saved.getType()).isEqualTo(RENTAL_OVERDUE);
         assertThat(saved.getMessage()).contains("연체가 길어지고 있어요! 최대 연체료에 도달하기 전에 꼭 반납해 주세요.");
+    }
+
+    @Test
+    @DisplayName("예약 순번 알림 전송 성공")
+    void notifyNextReservationIfExists_success(){
+        //given
+        Member member = createMember();
+        Reservation reservation = Reservation.builder()
+                .id(1L)
+                .member(member)
+                .reservationOrder(1)
+                .paymentDeadline(null)
+                .isActive(true)
+                .build();
+        RentalBook rentalBook = getRentalBook_PENDING_PAYMENT();
+        rentalBook.addReservation(reservation);
+        String message = RESERVATION_FIRST.format("오만과 편견", 0);
+
+        given(notificationRepository.existsByMemberAndRentalBookAndType(
+                member, rentalBook, RESERVATION_FIRST))
+                .willReturn(false);
+        given(reservationRepository.
+                findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(
+                        rentalBook, PENDING_PAYMENT))
+                .willReturn(Optional.of(reservation));
+
+        ReservationFirstEvent event = new ReservationFirstEvent(rentalBook, message);
+
+        ArgumentCaptor<NotifyDTO> captor = ArgumentCaptor.forClass(NotifyDTO.class);
+        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+
+        //when
+        rentalOverdueEventListener.notifyNextReservationIfExists(event);
+
+        //then
+        verify(messagingTemplate).convertAndSend(eq("/sub/member/" + member.getId()), captor.capture());
+        verify(notificationRepository).save(notificationCaptor.capture());
+
+        Notification saved = notificationCaptor.getValue();
+        assertThat(saved.getType()).isEqualTo(RESERVATION_FIRST);
+        assertThat(saved.getMessage()).contains("순번");
+
     }
 
     private static Member createMember() {

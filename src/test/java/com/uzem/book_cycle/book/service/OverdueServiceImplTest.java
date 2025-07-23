@@ -67,7 +67,6 @@ class OverdueServiceImplTest {
         List<RentalHistory> rentalHistories = List.of(rentalHistory);
         String message = NotificationType.RENTAL_OVERDUE.format("대여용 도서", 0);
 
-
         //when
         overdueService.processOverdue(rentalHistories);
 
@@ -80,9 +79,9 @@ class OverdueServiceImplTest {
         verify(eventPublisher).publishEvent(captor.capture());
         RentalOverdueEvent captured = captor.getValue();
 
-        assertThat(captured.getMember()).isEqualTo(member);
-        assertThat(captured.getMessage()).isEqualTo(message);
-        assertThat(captured.getRentalHistories()).isEqualTo(rentalHistories);
+        assertThat(captured.member()).isEqualTo(member);
+        assertThat(captured.message()).isEqualTo(message);
+        assertThat(captured.rentalHistories()).isEqualTo(rentalHistories);
     }
 
     @Test
@@ -115,8 +114,8 @@ class OverdueServiceImplTest {
         verify(eventPublisher).publishEvent(captor.capture());
         OverdueFeeEvent captured = captor.getValue();
 
-        assertThat(captured.getRentalHistory()).isEqualTo(rentalHistory);
-        assertThat(captured.getOverdueDays()).isEqualTo(overdueDays);
+        assertThat(captured.rentalHistory()).isEqualTo(rentalHistory);
+        assertThat(captured.overdueDays()).isEqualTo(overdueDays);
     }
 
     @Test
@@ -147,8 +146,8 @@ class OverdueServiceImplTest {
         verify(eventPublisher).publishEvent(captor.capture());
         OverdueFeeEvent captured = captor.getValue();
 
-        assertThat(captured.getRentalHistory()).isEqualTo(rentalHistory);
-        assertThat(captured.getOverdueDays()).isEqualTo(overdueDays);
+        assertThat(captured.rentalHistory()).isEqualTo(rentalHistory);
+        assertThat(captured.overdueDays()).isEqualTo(overdueDays);
     }
 
 

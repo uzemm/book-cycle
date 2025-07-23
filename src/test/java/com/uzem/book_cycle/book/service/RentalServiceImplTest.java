@@ -7,9 +7,9 @@ import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
-import com.uzem.book_cycle.notification.service.NotificationServiceImpl;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.time.LocalDate;
@@ -54,7 +55,7 @@ class RentalServiceImplTest {
     private MemberRepository memberRepository;
 
     @Mock
-    private NotificationServiceImpl notificationService;
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private RentalServiceImpl rentalService;
@@ -94,16 +95,60 @@ class RentalServiceImplTest {
         Reservation reservation = Reservation.builder()
                 .rentalBook(rentalBook)
                 .paymentDeadline(LocalDate.now().minusDays(1))
+                .isActive(true)
                 .build();
 
         List<Reservation> reservationList = List.of(reservation);
-        given(reservationRepository.findAllByRentalBook_RentalStatus(PENDING_PAYMENT))
+        given(reservationRepository .findAllByRentalStatusAndPaymentDeadlineBefore(PENDING_PAYMENT, LocalDate.now()))
                 .willReturn(reservationList);
         //when
-        rentalService.updateCancelPendingPayment();
+        rentalService.updateCancelPendingPayment(reservationList);
 
         //then
         assertThat(rentalBook.getRentalStatus()).isEqualTo(AVAILABLE);
+        assertThat(reservation.isActive()).isEqualTo(false);
+        assertThat(reservation.getPaymentDeadline()).isNull();
+
+    }
+
+    @Test
+    @DisplayName("결제대기기한 만료 시 취소처리 배치 성공 - 예약자있음 ")
+    void cancelExpiredPendingReservations_andReorderReservation(){
+        //given
+        RentalBook rentalBook = RentalBook.builder()
+                .rentalStatus(PENDING_PAYMENT)
+                .reservations(new ArrayList<>())
+                .build();
+        Reservation reservation = Reservation.builder()
+                .id(1L)
+                .paymentDeadline(LocalDate.now().minusDays(1))
+                .reservationOrder(1)
+                .isActive(true)
+                .build();
+        Reservation reservation2 = Reservation.builder()
+                .id(2L)
+                .reservationOrder(2)
+                .paymentDeadline(null)
+                .isActive(true)
+                .build();
+
+        rentalBook.addReservation(reservation);
+        rentalBook.addReservation(reservation2);
+
+        List<Reservation> reservationList = List.of(reservation);
+        given(reservationRepository .findAllByRentalStatusAndPaymentDeadlineBefore(PENDING_PAYMENT, LocalDate.now()))
+                .willReturn(reservationList);
+        //when
+        rentalService.updateCancelPendingPayment(reservationList);
+
+        //then
+        assertThat(rentalBook.getRentalStatus()).isEqualTo(PENDING_PAYMENT);
+        assertThat(reservation.isActive()).isEqualTo(false);
+        assertThat(reservation2.getReservationOrder()).isEqualTo(1);
+        assertThat(reservation2.getPaymentDeadline()).isNotNull();
+
+        ArgumentCaptor<ReservationFirstEvent> captor = ArgumentCaptor.forClass(ReservationFirstEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
     }
 
     @Test
@@ -261,8 +306,11 @@ class RentalServiceImplTest {
         assertThat(reservation.getPaymentDeadline()).isEqualTo(LocalDate.now().plusDays(1));
         assertThat(reservation.getReservationOrder()).isEqualTo(1);
 
-        verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
-        verify(notificationService).notifyNextReservationIfExists(rentalBook);
+        verify(paymentService, times(1)).processOverduePayment(
+                any(PaymentRequestDTO.class));
+
+        ArgumentCaptor<ReservationFirstEvent> captor = ArgumentCaptor.forClass(ReservationFirstEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
     }
 
     @Test
@@ -458,7 +506,9 @@ class RentalServiceImplTest {
         assertThat(reservation2.getReservationOrder()).isEqualTo(1);
         assertThat(reservation1.getReservationOrder()).isEqualTo(0);
         assertThat(reservation1.isActive()).isEqualTo(false);
-        verify(notificationService).notifyNextReservationIfExists(rentalBook);
+
+        ArgumentCaptor<ReservationFirstEvent> captor = ArgumentCaptor.forClass(ReservationFirstEvent.class);
+        verify(eventPublisher).publishEvent(captor.capture());
     }
 
     private static RentalHistory getRentalHistoryRented(Order order, RentalBook rentalBook, Member member) {

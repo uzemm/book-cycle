@@ -1,9 +1,13 @@
 package com.uzem.book_cycle.event.listener;
 
+import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.event.OverdueFeeEvent;
 import com.uzem.book_cycle.event.RentalOverdueEvent;
+import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.dto.NotifyDTO;
 import com.uzem.book_cycle.notification.entity.Notification;
@@ -20,7 +24,9 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import java.util.Optional;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
+import static com.uzem.book_cycle.admin.type.RentalStatus.PENDING_PAYMENT;
 import static com.uzem.book_cycle.notification.type.NotificationType.RENTAL_OVERDUE;
+import static com.uzem.book_cycle.notification.type.NotificationType.RESERVATION_FIRST;
 
 @Slf4j
 @Component
@@ -28,13 +34,14 @@ import static com.uzem.book_cycle.notification.type.NotificationType.RENTAL_OVER
 public class RentalOverdueEventListener {
     private final NotificationRepository notificationRepository;
     private final RentalHistoryRepository rentalHistoryRepository;
+    private final ReservationRepository reservationRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void notifyRentalOverdue(RentalOverdueEvent event) {
-        Member member = event.getMember();
-        String message = event.getMessage();
-        RentalHistory rentalHistory = event.getRentalHistories().get(0);
+        Member member = event.member();
+        String message = event.message();
+        RentalHistory rentalHistory = event.rentalHistories().get(0);
 
         // 알림 저장
         boolean overdue = rentalHistoryRepository.existsByRentalStatusAndOrderId(
@@ -61,12 +68,12 @@ public class RentalOverdueEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void notifyRentalOverdueFee(OverdueFeeEvent event) {
-        RentalHistory rentalHistory = event.getRentalHistory();
+        RentalHistory rentalHistory = event.rentalHistory();
 
         Optional<RentalOverdueNotificationPolicy> optionalPolicy
-                = RentalOverdueNotificationPolicy.fromDaysOverdue((int) event.getOverdueDays());
+                = RentalOverdueNotificationPolicy.fromDaysOverdue((int) event.overdueDays());
 
-        if(optionalPolicy .isEmpty()) return;
+        if (optionalPolicy.isEmpty()) return;
 
         RentalOverdueNotificationPolicy policy = optionalPolicy.get();
         if (notificationRepository.existsByMemberAndRentalBookAndOverdueDay(
@@ -96,4 +103,41 @@ public class RentalOverdueEventListener {
                     policy.getOverdueDay());
         }
     }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void notifyNextReservationIfExists(ReservationFirstEvent event) {
+        RentalBook rentalBook = event.rentalBook();
+        String message = event.message();
+
+        // 예약 여부
+        Optional<Reservation> optionalReservation = reservationRepository
+                .findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(
+                        rentalBook, PENDING_PAYMENT);
+        if (optionalReservation.isEmpty()) return;
+        Reservation next = optionalReservation.get();
+
+        // 알림 중복 여부
+        if (notificationRepository.existsByMemberAndRentalBookAndType(
+                next.getMember(), next.getRentalBook(), RESERVATION_FIRST)) return;
+
+        // 알림 저장
+        notificationRepository.save(Notification.builder()
+                .member(next.getMember())
+                .rentalBook(next.getRentalBook())
+                .message(message)
+                .type(RESERVATION_FIRST)
+                .build()
+        );
+
+        // 웹소켓 알림 전송
+        NotifyDTO notifyDTO = NotifyDTO.of(RESERVATION_FIRST, message);
+        try {
+            messagingTemplate.convertAndSend(
+                    "/sub/member/" + next.getMember().getId(), notifyDTO);
+        } catch (Exception e) {
+            log.warn("예약 알림 전송 실패: memberId={}, 이유={}",
+                    next.getMember().getId(), e.getMessage());
+        }
+    }
+
 }
