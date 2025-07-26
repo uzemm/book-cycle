@@ -92,16 +92,12 @@
 
 | 문제 상황 | 해결 방법 |
 |-----------|------------|
-| 반납 시 도서 상태가 변경되지 않아 응답에 반영 안 됨 | 결제 처리 후 반납 처리 순서로 변경 |
-| Lazy 로딩된 컬렉션 직렬화 오류 | DTO로 필요한 정보만 추출 |
-| `/payment/success.html?...` 요청이 @GetMapping(`/payment/{paymentKey}`)에 매칭됨 | 컨트롤러 URL 변경하여 패턴 충돌 방지 |
-| `@AuthenticationPrincipal`의 userDetails가 null | `JwtTokenProvider`에서 `CustomUserDetails` 반환하도록 수정 |
 
 
 ---
 
 ## 🚧 추가 고려/계획 중인 기능
-- [ ] 예약 대기 인원 확장 (1명 → 2명)
+- [x] 예약 대기 인원 확장 (1명 → 2명)
 - [ ] 사용자 리뷰 기능 도입 (도서/거래 후기)
 - [ ] 카카오 소셜 로그인 연동
 - [ ] 비밀번호 찾기 기능 추가 (이메일 기반)
