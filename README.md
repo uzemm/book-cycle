@@ -3,7 +3,7 @@
 ### 🗂️ 프로젝트 개요
 
 - **서비스명**: BookCycle
-- **기간**: 2025.02~
+- **기간**: 2025.02 ~
 - **목표**: 중고도서를 구매하거나 대여할 수 있는 플랫폼 개발
 
 ---
@@ -61,7 +61,7 @@
 
 ## 📈 ERD / 시스템 아키텍처
 
-<img width="4102" height="3460" alt="sales_book" src="https://github.com/user-attachments/assets/69c0003d-e844-45f4-ab0d-6f5b321dfb4c" />
+<img width="3482" height="3972" alt="sales_book" src="https://github.com/user-attachments/assets/4c8aa2e6-0fed-418a-93e3-dc2228cd8ac1" />
 
 - 공통 도서 테이블 + 판매/대여 분리
 - 주문 - 주문항목 - 결제 연관 구조
