@@ -5,6 +5,7 @@ import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.event.RentalReturnDueEvent;
 import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.dto.NotifyDTO;
@@ -29,13 +30,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
-import static com.uzem.book_cycle.admin.type.RentalStatus.PENDING_PAYMENT;
-import static com.uzem.book_cycle.notification.type.NotificationType.RENTAL_OVERDUE;
-import static com.uzem.book_cycle.notification.type.NotificationType.RESERVATION_FIRST;
+import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+import static com.uzem.book_cycle.notification.type.NotificationType.*;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 
 
@@ -216,7 +216,150 @@ class RentalOverdueEventListenerTest {
         Notification saved = notificationCaptor.getValue();
         assertThat(saved.getType()).isEqualTo(RESERVATION_FIRST);
         assertThat(saved.getMessage()).contains("순번");
+    }
 
+    @Test
+    @DisplayName("반납 예정일 알림 전송 성공")
+    void notifyReturnDueReminder_success(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = getRentalBook_RENTED();
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        RentalHistory rentalHistory = RentalHistory.builder()
+                .rentalDate(LocalDate.now().minusDays(20))
+                .returnDate(LocalDate.now().plusDays(3))
+                .rentalStatus(RENTED)
+                .price(1000L)
+                .member(member)
+                .rentalBook(rentalBook)
+                .order(order)
+                .build();
+
+        List<RentalHistory> rentalHistories = List.of(rentalHistory);
+        String message = RETURN_DUE.format("오만과 편견", 0);
+
+        given(notificationRepository.existsByMemberAndOrderAndType(
+                member, order, RETURN_DUE))
+                .willReturn(false);
+
+        RentalReturnDueEvent event = new RentalReturnDueEvent(member, rentalHistories, message);
+
+        ArgumentCaptor<NotifyDTO> captor = ArgumentCaptor.forClass(NotifyDTO.class);
+        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+
+        //when
+        rentalOverdueEventListener.notifyReturnDueReminder(event);
+
+        //then
+        verify(messagingTemplate).convertAndSend(eq("/sub/member/" + member.getId()), captor.capture());
+        verify(notificationRepository).save(notificationCaptor.capture());
+
+        Notification saved = notificationCaptor.getValue();
+        assertThat(saved.getType()).isEqualTo(RETURN_DUE);
+        assertThat(saved.getMessage()).isEqualTo(message);
+    }
+
+    @Test
+    @DisplayName("반납 예정일 알림 전송 성공 - 여러권 일 때")
+    void notifyReturnDueReminder_withMultipleBooks_success(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = getRentalBook_RENTED();
+        RentalBook rentalBook2 = RentalBook.builder()
+                .id(2L)
+                .title("싯다르타")
+                .price(1000L)
+                .reservations(new ArrayList<>())
+                .rentalStatus(RENTED)
+                .build();
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        RentalHistory rentalHistory = RentalHistory.builder()
+                .rentalDate(LocalDate.now().minusDays(20))
+                .returnDate(LocalDate.now().plusDays(3))
+                .rentalStatus(RENTED)
+                .price(1000L)
+                .member(member)
+                .rentalBook(rentalBook)
+                .order(order)
+                .build();
+        RentalHistory rentalHistory2 = RentalHistory.builder()
+                .rentalDate(LocalDate.now().minusDays(20))
+                .returnDate(LocalDate.now().plusDays(3))
+                .rentalStatus(RENTED)
+                .price(100L)
+                .member(member)
+                .rentalBook(rentalBook2)
+                .order(order)
+                .build();
+
+
+        List<RentalHistory> rentalHistories = List.of(rentalHistory, rentalHistory2);
+        String message = RETURN_DUE.format(rentalBook.getTitle(), rentalHistories.size() - 1);
+
+        given(notificationRepository.existsByMemberAndOrderAndType(
+                member, order, RETURN_DUE))
+                .willReturn(false);
+
+        RentalReturnDueEvent event = new RentalReturnDueEvent(member, rentalHistories, message);
+
+        ArgumentCaptor<NotifyDTO> captor = ArgumentCaptor.forClass(NotifyDTO.class);
+        ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+
+        //when
+        rentalOverdueEventListener.notifyReturnDueReminder(event);
+
+        //then
+        verify(messagingTemplate).convertAndSend(eq("/sub/member/" + member.getId()), captor.capture());
+        verify(notificationRepository).save(notificationCaptor.capture());
+
+        Notification saved = notificationCaptor.getValue();
+        assertThat(saved.getType()).isEqualTo(RETURN_DUE);
+        assertThat(saved.getMessage()).isEqualTo(message);
+    }
+
+    @Test
+    @DisplayName("알림 전송 실패 시 예외 캐치 후 로그만 남김")
+    void notifyReturnDueReminder_fail(){
+        //given
+        Member member = createMember();
+        RentalBook rentalBook = getRentalBook_RENTED();
+        Order order = Order.builder()
+                .id(1L)
+                .build();
+        RentalHistory rentalHistory = RentalHistory.builder()
+                .rentalDate(LocalDate.now().minusDays(20))
+                .returnDate(LocalDate.now().plusDays(3))
+                .rentalStatus(RENTED)
+                .price(1000L)
+                .member(member)
+                .rentalBook(rentalBook)
+                .order(order)
+                .build();
+
+        List<RentalHistory> rentalHistories = List.of(rentalHistory);
+        String message = RETURN_DUE.format("오만과 편견", 0);
+
+        given(notificationRepository.existsByMemberAndOrderAndType(
+                member, order, RETURN_DUE))
+                .willReturn(false);
+
+        doThrow(new RuntimeException("웹소켓 오류"))
+                .when(messagingTemplate).convertAndSend(anyString(), Optional.ofNullable(any()));
+
+        RentalReturnDueEvent event = new RentalReturnDueEvent(member, rentalHistories, message);
+
+
+        //when
+        rentalOverdueEventListener.notifyReturnDueReminder(event);
+
+        //then
+        verify(notificationRepository).save(any());
+
+        verify(messagingTemplate).convertAndSend(anyString(), Optional.ofNullable(any()));
     }
 
     private static Member createMember() {
@@ -244,6 +387,17 @@ class RentalOverdueEventListenerTest {
                 .price(1000L)
                 .reservations(new ArrayList<>())
                 .rentalStatus(OVERDUE)
+                .build();
+        return rentalBook;
+    }
+
+    private static RentalBook getRentalBook_RENTED() {
+        RentalBook rentalBook = RentalBook.builder()
+                .id(1L)
+                .title("오만과 편견")
+                .price(1000L)
+                .reservations(new ArrayList<>())
+                .rentalStatus(RENTED)
                 .build();
         return rentalBook;
     }

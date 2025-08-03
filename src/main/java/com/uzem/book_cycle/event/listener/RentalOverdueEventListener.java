@@ -7,12 +7,14 @@ import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.event.OverdueFeeEvent;
 import com.uzem.book_cycle.event.RentalOverdueEvent;
+import com.uzem.book_cycle.event.RentalReturnDueEvent;
 import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.dto.NotifyDTO;
 import com.uzem.book_cycle.notification.entity.Notification;
 import com.uzem.book_cycle.notification.repository.NotificationRepository;
 import com.uzem.book_cycle.notification.type.RentalOverdueNotificationPolicy;
+import com.uzem.book_cycle.order.entity.Order;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -21,12 +23,12 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 
+import java.util.List;
 import java.util.Optional;
 
-import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
-import static com.uzem.book_cycle.admin.type.RentalStatus.PENDING_PAYMENT;
-import static com.uzem.book_cycle.notification.type.NotificationType.RENTAL_OVERDUE;
-import static com.uzem.book_cycle.notification.type.NotificationType.RESERVATION_FIRST;
+import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+import static com.uzem.book_cycle.notification.type.NotificationType.*;
+import static com.uzem.book_cycle.notification.type.NotificationType.RETURN_DUE;
 
 @Slf4j
 @Component
@@ -44,15 +46,15 @@ public class RentalOverdueEventListener {
         RentalHistory rentalHistory = event.rentalHistories().get(0);
 
         // 알림 저장
-        boolean overdue = rentalHistoryRepository.existsByRentalStatusAndOrderId(
-                OVERDUE, rentalHistory.getOrder().getId());
-        if (overdue) {
-            notificationRepository.save(Notification.builder()
-                    .member(member)
-                    .type(RENTAL_OVERDUE)
-                    .message(message)
-                    .build());
-        }
+        if (notificationRepository.existsByMemberAndRentalBookAndType(
+                member, rentalHistory.getRentalBook(), RENTAL_OVERDUE)) return;
+
+        notificationRepository.save(Notification.builder()
+                .member(member)
+                .rentalBook(rentalHistory.getRentalBook())
+                .type(RENTAL_OVERDUE)
+                .message(message)
+                .build());
 
         // 웹소켓 알림 전송
         NotifyDTO notifyDTO = NotifyDTO.of(RENTAL_OVERDUE, message);
@@ -137,6 +139,40 @@ public class RentalOverdueEventListener {
         } catch (Exception e) {
             log.warn("예약 알림 전송 실패: memberId={}, 이유={}",
                     next.getMember().getId(), e.getMessage());
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void notifyReturnDueReminder(RentalReturnDueEvent event) {
+        Member member = event.member();
+        String message = event.message();
+        RentalHistory first = event.rentalHistories().get(0); // 첫번째 이력
+        RentalBook rentalBook = first.getRentalBook();
+        Order order = first.getOrder();
+
+        if(notificationRepository.existsByMemberAndOrderAndType(
+                member, order, RETURN_DUE)) return;
+
+        // 알림 저장
+        notificationRepository.save(Notification.builder()
+                .member(member)
+                .rentalBook(rentalBook)
+                .order(order)
+                .type(RETURN_DUE)
+                .message(message)
+                .build());
+
+        log.info("반납 예정일 알림 저장: memberId={}, orderId={}, rentalBookId={}",
+                member.getId(), order.getId(), rentalBook.getId());
+
+        // 웹소켓 알림 전송
+        NotifyDTO notifyDTO = NotifyDTO.of(RETURN_DUE, message);
+        try {
+            messagingTemplate.convertAndSend(
+                    "/sub/member/" + member.getId(), notifyDTO);
+        } catch (Exception e) {
+            log.warn("반납 예정일 알림 전송 실패: memberId={}, 이유={}",
+                    member.getId(), e.getMessage());
         }
     }
 

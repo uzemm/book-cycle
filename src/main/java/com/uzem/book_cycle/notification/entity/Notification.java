@@ -4,6 +4,7 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.type.NotificationType;
+import com.uzem.book_cycle.order.entity.Order;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -25,6 +26,9 @@ public class Notification extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rental_book_id")
     private RentalBook rentalBook;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Order order;
 
     @Column(nullable = false)
     private NotificationType type;
