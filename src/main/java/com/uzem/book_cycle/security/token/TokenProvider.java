@@ -232,4 +232,12 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         }
         return null;
     }
+
+    /**
+     * accessToken으로 memberId 추출하는 메서드
+     */
+    public Long getMemberIdFromAccessToken(String accessToken) {
+        Claims claims = parseClaims(accessToken); // 내부에서 private 메서드 사용
+        return Long.valueOf(claims.getSubject());
+    }
 }
