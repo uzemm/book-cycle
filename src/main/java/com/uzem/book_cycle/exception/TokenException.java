@@ -4,16 +4,11 @@ import com.uzem.book_cycle.security.token.TokenErrorCode;
 import lombok.*;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class TokenException extends RuntimeException {
-    private TokenErrorCode tokenErrorCode;
-    private String errorMessage;
+    private final TokenErrorCode tokenErrorCode;
 
     public TokenException(TokenErrorCode tokenErrorCode) {
+        super(tokenErrorCode.getMessage());
       this.tokenErrorCode = tokenErrorCode;
-      this.errorMessage = tokenErrorCode.getMessage();
     }
 }

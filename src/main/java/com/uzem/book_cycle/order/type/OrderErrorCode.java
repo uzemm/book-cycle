@@ -3,18 +3,21 @@ package com.uzem.book_cycle.order.type;
 import com.uzem.book_cycle.exception.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
 public enum OrderErrorCode implements ErrorCode {
-    ORDER_NOT_FOUND("주문내역을 찾을 수 없습니다."),
-    INVALID_TOTAL_PRICE("총 결제 금액은 0원보다 커야 합니다."),
-    ORDER_ITEM_NOT_FOUND("주문 항목이 없습니다."),
-    DUPLICATE_ORDER("이미 처리된 주문입니다."),
-    ORDER_STATUS_SHIPPED("배송 중인 도서는 취소할 수 없습니다.")
+    ORDER_NOT_FOUND("주문내역을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+    INVALID_TOTAL_PRICE("총 결제 금액은 0원보다 커야 합니다.", HttpStatus.BAD_REQUEST),
+    ORDER_ITEM_NOT_FOUND("주문 항목이 없습니다.", HttpStatus.BAD_REQUEST),
+    DUPLICATE_ORDER("이미 처리된 주문입니다.", HttpStatus.CONFLICT),
+    ORDER_STATUS_SHIPPED("배송 중인 도서는 취소할 수 없습니다.", HttpStatus.FORBIDDEN)
     ;
 
-    private String description;
+
+    private final String description;
+    private final HttpStatus httpStatus;
 
     @Override
     public String getCode() {
@@ -24,5 +27,10 @@ public enum OrderErrorCode implements ErrorCode {
     @Override
     public String getMessage() {
         return this.description;
+    }
+
+    @Override
+    public HttpStatus getHttpStatus() {
+        return this.httpStatus;
     }
 }

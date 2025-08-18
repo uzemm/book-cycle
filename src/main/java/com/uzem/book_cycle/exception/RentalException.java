@@ -4,16 +4,12 @@ import com.uzem.book_cycle.admin.type.RentalErrorCode;
 import lombok.*;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class RentalException extends RuntimeException {
 
-    private RentalErrorCode rentalErrorCode;
-    private String errorMessage;
+    private final RentalErrorCode rentalErrorCode;
 
     public RentalException(RentalErrorCode rentalErrorCode) {
+        super(rentalErrorCode.getMessage());
         this.rentalErrorCode = rentalErrorCode;
-        this.errorMessage = rentalErrorCode.getMessage();
     }
 }
