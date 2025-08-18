@@ -43,34 +43,37 @@ public class MemberServiceImpl implements MemberService{
     private final ReservationRepository reservationRepository;
     private final OrderRepository orderRepository;
 
-    // 내정보 조회
+    // 내정보 미리보기
     @Transactional(readOnly = true)
     public MemberResponseDTO getMyInfo(Long memberId) {
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new MemberException(MEMBER_NOT_FOUND));
 
-        return MemberResponseDTO.from(member);
+        return MemberResponseDTO.from(getMember(memberId));
     }
 
-    public MemberResponseDTO updateMyInfo(
+    // 내정보 상세 조회
+    @Transactional(readOnly = true)
+    public MemberDetailResponseDTO getMyInfoDetail(Long memberId) {
+
+        return MemberDetailResponseDTO.from(getMember(memberId));
+    }
+
+    public MemberDetailResponseDTO updateMyInfo(
             Long memberId, UpdateInfoRequestDTO requestDTO) {
 
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new MemberException(MEMBER_NOT_FOUND));
+        Member member = getMember(memberId);
 
         member.updateMyInfo(requestDTO.getPhone(), requestDTO.getAddress());
 
         // SecurityContext 인증 정보 업데이트
         securityContextService.updateAuthentication(member);
 
-        return MemberResponseDTO.from(member);
+        return MemberDetailResponseDTO.from(member);
     }
 
     public void updatePassword
             (Long memberId, UpdatePasswordRequestDTO requestDTO,
              String accessToken) {
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new MemberException(MEMBER_NOT_FOUND));
+        Member member = getMember(memberId);
 
         // 현재 비밀번호 확인
         validationUpdatePassword(requestDTO, member);
@@ -110,8 +113,7 @@ public class MemberServiceImpl implements MemberService{
 
     // 이메일 변경 요청
     public void updateEmail(Long memberId, UpdateEmailRequestDTO requestDTO) {
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new MemberException(MEMBER_NOT_FOUND));
+        Member member = getMember(memberId);
 
         if(memberRepository.findByEmail(requestDTO.getNewEmail()).isPresent()){
             throw new MemberException(DUPLICATE_EMAIL);
@@ -194,6 +196,11 @@ public class MemberServiceImpl implements MemberService{
         return orderRepository.findByMemberId(memberId).stream()
                 .map(MemberOrderPreviewDTO::from)
                 .toList();
+    }
+
+    private Member getMember(Long memberId) {
+        return memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MEMBER_NOT_FOUND));
     }
 
 }

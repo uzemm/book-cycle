@@ -6,7 +6,8 @@ import java.util.List;
 
 public interface MemberService {
     MemberResponseDTO getMyInfo(Long memberId);
-    MemberResponseDTO updateMyInfo(
+    MemberDetailResponseDTO getMyInfoDetail(Long memberId);
+    MemberDetailResponseDTO updateMyInfo(
             Long memberId, UpdateInfoRequestDTO requestDTO);
     void updatePassword
             (Long memberId, UpdatePasswordRequestDTO requestDTO,

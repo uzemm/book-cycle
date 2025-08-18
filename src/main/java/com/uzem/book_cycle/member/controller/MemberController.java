@@ -45,15 +45,24 @@ public class MemberController {
         return ResponseEntity.ok(memberService.getMyInfo(userDetails.getId()));
     }
 
+    @Operation(summary = "내정보 상세 조회")
+    @GetMapping("/detail")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<MemberDetailResponseDTO> getMyInfoDetail(
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+
+        return ResponseEntity.ok(memberService.getMyInfoDetail(userDetails.getId()));
+    }
+
     @Operation(summary = "내정보 수정")
     @PatchMapping()
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<MemberResponseDTO> updateMyInfo(
+    public ResponseEntity<MemberDetailResponseDTO> updateMyInfo(
             @AuthenticationPrincipal CustomUserDetails userDetails,
             @RequestBody @Valid UpdateInfoRequestDTO request) {
 
         Long memberId = userDetails.getId();
-        MemberResponseDTO updateMyInfo =
+        MemberDetailResponseDTO updateMyInfo =
                 memberService.updateMyInfo(memberId, request);
 
         return ResponseEntity.ok(updateMyInfo);
