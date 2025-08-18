@@ -21,11 +21,12 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_AUTHORITY_NOT_FOUND;
 import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 
 @Slf4j
@@ -39,7 +40,7 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     private static final long ACCESS_TOKEN_EXPIRE_TIME = Duration.ofMinutes(30).toMillis(); // 30분
     private static final long REFRESH_TOKEN_EXPIRE_TIME = Duration.ofMinutes(14).toMillis(); // 2주
 
-    private final Key key;
+    private final SecretKey key;
     private final RedisUtil redisUtil;
     private final UserDetailsService userDetailsService;
     private final MemberRepository memberRepository;
@@ -103,10 +104,10 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         long now = (new Date()).getTime();
         Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         return Jwts.builder()
-                .setSubject(memberId.toString())
+                .subject(memberId.toString())
                 .claim(AUTHORITIES_KEY, authorities)
-                .setExpiration(accessTokenExpiresIn)
-                .signWith(key, SignatureAlgorithm.HS512)
+                .expiration(accessTokenExpiresIn)
+                .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
 
@@ -116,11 +117,11 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     private String generateRefreshToken(Long memberId, String authorities) {
         long now = (new Date()).getTime();
         return Jwts.builder()
-                .setSubject(memberId.toString())
+                .subject(memberId.toString())
                 .claim(AUTHORITIES_KEY, authorities)
-                .setExpiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
+                .expiration(new Date(now + REFRESH_TOKEN_EXPIRE_TIME))
                 .claim("isRefreshToken", true) // refreshToken 임을 나타내는 클레임 추가
-                .signWith(key, SignatureAlgorithm.HS512)
+                .signWith(key, Jwts.SIG.HS512)
                 .compact();
     }
 
@@ -133,24 +134,26 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         Long memberId = Long.valueOf(claims.getSubject());
         log.info("Extracted userEmail from token: {}", memberId);
 
-        if (claims.get(AUTHORITIES_KEY) == null) {
-            throw new RuntimeException("권한 정보가 없는 토큰입니다.");
+        String authString  = claims.get(AUTHORITIES_KEY, String.class);
+        if (authString  == null || authString.isBlank()) {
+            throw new MemberException(MEMBER_AUTHORITY_NOT_FOUND);
         }
 
         // 클레임에서 권한 정보 가져오기
         Collection<? extends GrantedAuthority> authorities =
-                Arrays.stream(claims.get(AUTHORITIES_KEY).toString().split(","))
+                Arrays.stream(authString.split(","))
+                        .filter(auth -> !auth.isBlank())
                         .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+                        .toList();
 
-        // UserDetailsService를 통해 DB에서 조회
+        // UserDetailsService 통해 DB 조회
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.MEMBER_NOT_FOUND));
 
-        // ✅ CustomUserDetails를 사용하도록 변경
+        // CustomUserDetails 사용하도록 변경
         CustomUserDetails userDetails = new CustomUserDetails(member);
 
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        return new UsernamePasswordAuthenticationToken(userDetails, "", authorities);
     }
 
     /**
@@ -162,7 +165,11 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
             throw new TokenException(ILLEGAL_TOKEN);
         }
         try {
-            Jwts.parser().setSigningKey(key).build().parseClaimsJws(token);
+            Jwts.parser()
+                    .verifyWith(key)  // 서명 검증 키 지정
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload(); // Claims 부분 추출
             return true;
         } catch (io.jsonwebtoken.security.SecurityException | MalformedJwtException e) {
             throw new TokenException(INVALID_TOKEN);
@@ -180,7 +187,11 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
      */
     private Claims parseClaims(String accessToken) {
         try {
-            return Jwts.parser().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
+            return Jwts.parser()
+                    .verifyWith(key)  // 서명 검증 키 지정
+                    .build()
+                    .parseSignedClaims(accessToken)
+                    .getPayload(); // Claims 부분 추출
         } catch (ExpiredJwtException e) {
             return e.getClaims();
         }
@@ -202,10 +213,11 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
         try {
             // JWT 토큰에서 Claims 추출
             Claims claims = Jwts.parser()
-                    .setSigningKey(key)
+                    .verifyWith(key)  // 서명 검증 키 지정
                     .build()
-                    .parseClaimsJws(accessToken)
-                    .getBody();
+                    .parseSignedClaims(accessToken)
+                    .getPayload(); // Claims 부분 추출
+
 
             // 만료 시간(exp) 가져오기
             Date expiration = claims.getExpiration();
@@ -239,5 +251,13 @@ public class TokenProvider { // 토큰 생성, 검증, 사용자 정보 추출
     public Long getMemberIdFromAccessToken(String accessToken) {
         Claims claims = parseClaims(accessToken); // 내부에서 private 메서드 사용
         return Long.valueOf(claims.getSubject());
+    }
+
+    public RedisUtil getRedisUtil() {
+        return redisUtil;
+    }
+
+    public UserDetailsService getUserDetailsService() {
+        return userDetailsService;
     }
 }
