@@ -3,6 +3,7 @@ package com.uzem.book_cycle.auth.service;
 import com.uzem.book_cycle.auth.dto.LoginRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpResponseDTO;
+import com.uzem.book_cycle.auth.email.DTO.EmailResendResponseDTO;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.email.entity.EmailVerification;
 import com.uzem.book_cycle.auth.email.repository.EmailVerificationRepository;
@@ -23,7 +24,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -66,7 +66,6 @@ public class AuthServiceImpl implements AuthService {
                 .role(USER)
                 .status(PENDING)
                 .rentalCnt(0)
-                .refreshToken("")
                 .point(0L)
                 .isDeleted(false)
                 .socialId(null)
@@ -96,7 +95,7 @@ public class AuthServiceImpl implements AuthService {
                 .member(member)
                 .email(member.getEmail())
                 .verificationCode(verificationCode)
-                .expiresAt(LocalDateTime.now().plusHours(1))
+                .expiresAt(LocalDateTime.now().plusMinutes(10))
                 .build();
     }
 
@@ -105,6 +104,10 @@ public class AuthServiceImpl implements AuthService {
         if(memberRepository.existsByEmail(request.getEmail())) {
             throw new MemberException(MemberErrorCode.EMAIL_ALREADY_IN_USE);
         }
+        // 비밀번호 확인 검사
+        if(!request.getPassword().equals(request.getConfirmPassword())){
+            throw new MemberException(MemberErrorCode.INCORRECT_PASSWORD);
+        }
         //전화번호 중복검사
         if(memberRepository.existsByPhone(request.getPhone())) {
             throw new MemberException(MemberErrorCode.PHONE_ALREADY_IN_USE);
@@ -112,31 +115,27 @@ public class AuthServiceImpl implements AuthService {
     }
 
     public EmailVerificationResponseDTO verifyCheck(String email, String verificationCode) {
-        //인증코드를 찾는다
+        // 1. 회원 존재 여부 확인
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new MemberException(MEMBER_NOT_FOUND));
+
+        // 2. 이미 인증된 회원인지 확인
+        if(member.getStatus() == ACTIVE){
+            throw new MemberException(MemberErrorCode.EMAIL_ALREADY_VERIFIED);
+        }
+
+        // 3. 인증코드 일치 여부 및 유효성 검증
         EmailVerification emailVerification = emailRepository.
                 findByEmailAndVerificationCode(email, verificationCode)
                 .orElseThrow(() -> new MemberException(EMAIL_VERIFICATION_CODE_INVALID));
 
         validateEmailVerification(emailVerification);
 
-        //회원 가져옴
-        Member member = emailVerification.getMember();
-
-        //이미 인증된 상태
-        if(member.getStatus() == ACTIVE){
-            throw new MemberException(MemberErrorCode.EMAIL_ALREADY_VERIFIED);
-        }
-
-        //회원상태 변경
+        // 4. 회원 상태를 활성화로 변경
         member.activateMember();
-        memberRepository.save(member);
-
-        //이메일 인증 완료
+        // 5. 인증 정보 상태 변경 및 삭제
         emailVerification.verified();
-        emailRepository.save(emailVerification);
-
-        //인증 성공 시 데이터 삭제
-        emailRepository.delete(emailVerification);
+        emailRepository.delete(emailVerification); //인증 성공 시 데이터 삭제
 
         return EmailVerificationResponseDTO.from(member, emailVerification);
     }
@@ -148,6 +147,30 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    // 인증코드 재전송
+    public EmailResendResponseDTO verificationCodeResend(String email){
+        Member member = memberRepository.findByEmail(email).orElseThrow(
+                () -> new MemberException(MEMBER_NOT_FOUND));
+
+        //이미 인증된 회원인지 확인
+        if(member.getStatus() == ACTIVE){
+            throw new MemberException(MemberErrorCode.EMAIL_ALREADY_VERIFIED);
+        }
+
+        //이메일 인증 정보 저장
+        EmailVerification emailVerification = createEmailVerification(member);
+        emailRepository.save(emailVerification);
+
+        //트랜잭션 종료 후 이메일 전송 (비동기 실행)
+        sendVerificationEmailAsync(member, emailVerification.getVerificationCode());
+
+        return EmailResendResponseDTO.of(
+                member.getEmail(),
+                member.getStatus(),
+                emailVerification.getExpiresAt()
+        );
+    }
+
     @Async // 비동기 실행
     public void sendVerificationEmailAsync(Member member, String verificationCode) {
         try{
@@ -155,12 +178,6 @@ public class AuthServiceImpl implements AuthService {
         } catch (MemberException e) {
             log.error("이메일 전송 실패 : {}", member.getEmail(), e);
         }
-    }
-
-    @Scheduled(cron = "0 0 3 * * ?")
-    public void deleteExpiredEmailVerifications(){
-        LocalDateTime localDateTime = LocalDateTime.now();
-        emailRepository.deleteAllByExpiresAtBefore(localDateTime);
     }
 
     public TokenDTO login(LoginRequestDTO loginRequestDTO) {
@@ -204,7 +221,7 @@ public class AuthServiceImpl implements AuthService {
 
     public void logout(String accessToken) {
         // tokenProvider에서 email 정보 가져옴
-        Long memberId = Long.valueOf(tokenProvider.getAuthentication(accessToken).getName());
+        long memberId = Long.parseLong(tokenProvider.getAuthentication(accessToken).getName());
 
         // 로그아웃 시 리프레시 토큰 삭제 (로그인 유지 X)
         redisUtil.delete("refreshToken:" + memberId);

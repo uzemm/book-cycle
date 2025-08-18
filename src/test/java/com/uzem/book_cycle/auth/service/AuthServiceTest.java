@@ -129,10 +129,31 @@ class AuthServiceTest {
         assertEquals(MemberErrorCode.PHONE_ALREADY_IN_USE, exception.getMemberErrorCode());
     }
 
+    @Test
+    @DisplayName("회원가입 - 비밀번호 확인")
+    void signUp_passwordConfirm() {
+        //given
+        SignUpRequestDTO request = SignUpRequestDTO.builder()
+                .email("test@uzem.com")
+                .password("12345678")
+                .confirmPassword("1234567")
+                .phone("01012345678")
+                .name("테스트 유저")
+                .address("서울시 강남구")
+                .build();
+
+        //when
+        MemberException exception = assertThrows(MemberException.class,
+                () -> authService.signUp(request));
+        //then
+        assertEquals(INCORRECT_PASSWORD, exception.getMemberErrorCode());
+    }
+
     private SignUpRequestDTO createSignUpRequest() {
         return SignUpRequestDTO.builder()
                 .email("test@uzem.com")
                 .password("12345678")
+                .confirmPassword("12345678")
                 .phone("01012345678")
                 .name("테스트 유저")
                 .address("서울시 강남구")

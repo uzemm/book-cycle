@@ -1,6 +1,8 @@
 package com.uzem.book_cycle.auth.controller;
 
 import com.uzem.book_cycle.auth.dto.*;
+import com.uzem.book_cycle.auth.email.DTO.EmailResendRequestDTO;
+import com.uzem.book_cycle.auth.email.DTO.EmailResendResponseDTO;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthService;
 import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
@@ -42,6 +44,16 @@ public class AuthController {
             (@RequestBody @Valid EmailVerificationRequestDTO request) {
         EmailVerificationResponseDTO response = authService.verifyCheck(
                 request.getEmail(), request.getVerificationCode());
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "인증코드 재전송", description = "인증코드를 재전송 합니다.")
+    @PostMapping("/email/resend")
+    public ResponseEntity<EmailResendResponseDTO> verificationCodeResend(
+            @RequestBody EmailResendRequestDTO request) {
+
+        EmailResendResponseDTO response = authService.verificationCodeResend(request.email());
 
         return ResponseEntity.ok(response);
     }

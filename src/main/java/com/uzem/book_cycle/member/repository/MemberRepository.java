@@ -1,9 +1,12 @@
 package com.uzem.book_cycle.member.repository;
 
 import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.member.type.MemberStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -14,4 +17,5 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByEmailAndIsDeletedFalse(String email);
     boolean existsByEmail(String email); //이메일 중복 체크
     boolean existsByPhone(String phone); //전화번호 중복 체크
+    List<Member> findAllByStatusAndCreatedAtBefore(MemberStatus status, LocalDateTime now);
 }
