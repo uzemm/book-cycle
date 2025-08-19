@@ -12,7 +12,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateSalesRequestDTO extends UpdateBookRequestDTO {
+public class UpdateAdminSalesRequestDTO extends UpdateBookRequestDTO {
     @NotNull
     private Long price;
     @NotNull

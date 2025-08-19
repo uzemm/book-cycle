@@ -3,9 +3,9 @@ package com.uzem.book_cycle.book.controller;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalResponseDTO;
 import com.uzem.book_cycle.admin.entity.SalesBook;
-import com.uzem.book_cycle.admin.dto.sales.SalesResponseDTO;
-import com.uzem.book_cycle.admin.service.AdminRentalService;
-import com.uzem.book_cycle.admin.service.SalesService;
+import com.uzem.book_cycle.admin.dto.sales.AdminSalesResponseDTO;
+import com.uzem.book_cycle.admin.service.AdminRentalServiceImpl;
+import com.uzem.book_cycle.admin.service.AdminSalesServiceImpl;
 import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
 import com.uzem.book_cycle.book.dto.SalesPreviewDTO;
 import com.uzem.book_cycle.exception.BookException;
@@ -24,12 +24,12 @@ import static com.uzem.book_cycle.naver.type.BookErrorCode.EMPTY_SEARCH_QUERY;
 @RequiredArgsConstructor
 public class PublicBookController {
 
-    private final SalesService salesService;
-    private final AdminRentalService rentalService;
+    private final AdminSalesServiceImpl salesService;
+    private final AdminRentalServiceImpl rentalService;
 
     @GetMapping("/sales/{saleId}")
-    public ResponseEntity<SalesResponseDTO> salesDetail(@PathVariable Long saleId){
-        SalesResponseDTO response = salesService.getSalesBookDetail(saleId);
+    public ResponseEntity<AdminSalesResponseDTO> salesDetail(@PathVariable Long saleId){
+        AdminSalesResponseDTO response = salesService.getSalesBookDetail(saleId);
         return ResponseEntity.ok(response);
     }
 

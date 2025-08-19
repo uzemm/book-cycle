@@ -3,7 +3,7 @@ package com.uzem.book_cycle.order.service;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
-import com.uzem.book_cycle.admin.repository.SalesRepository;
+import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.service.RentalServiceImpl;
 import com.uzem.book_cycle.cart.entity.Cart;
@@ -54,7 +54,7 @@ import static com.uzem.book_cycle.payment.type.PaymentErrorCode.PAYMENT_NOT_FOUN
 public class OrderServiceImpl implements OrderService{
     private final OrderRepository orderRepository;
     private final MemberRepository memberRepository;
-    private final SalesRepository salesRepository;
+    private final AdminSalesRepository salesRepository;
     private final AdminRentalRepository rentalRepository;
     private final PaymentService paymentService;
     private final RentalServiceImpl rentalService;

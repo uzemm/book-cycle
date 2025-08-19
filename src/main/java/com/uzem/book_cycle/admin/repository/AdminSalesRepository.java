@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SalesRepository extends JpaRepository<SalesBook, Long> {
+public interface AdminSalesRepository extends JpaRepository<SalesBook, Long> {
     Optional<SalesBook> findById(Long salesBookId);
     Optional<SalesBook> findByIdAndIsDeletedFalse(Long salesBookId);
 

@@ -9,7 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SalesResponseDTO {
+public class AdminSalesResponseDTO {
 
     private Long id;
     private String title;
@@ -27,8 +27,8 @@ public class SalesResponseDTO {
     private boolean isDeleted;
     private boolean isPublic;
 
-    public static SalesResponseDTO create(SalesBook salesBook) {
-        return SalesResponseDTO.builder()
+    public static AdminSalesResponseDTO create(SalesBook salesBook) {
+        return AdminSalesResponseDTO.builder()
                 .id(salesBook.getId())
                 .title(salesBook.getTitle())
                 .author(salesBook.getAuthor())

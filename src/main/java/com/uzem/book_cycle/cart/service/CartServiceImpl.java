@@ -3,7 +3,7 @@ package com.uzem.book_cycle.cart.service;
 import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
-import com.uzem.book_cycle.admin.repository.SalesRepository;
+import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.cart.dto.CartRequestDTO;
 import com.uzem.book_cycle.cart.dto.CartResponseDTO;
 import com.uzem.book_cycle.cart.entity.Cart;
@@ -36,7 +36,7 @@ import static com.uzem.book_cycle.order.type.ItemType.SALE;
 public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final AdminRentalRepository rentalRepository;
-    private final SalesRepository salesRepository;
+    private final AdminSalesRepository salesRepository;
     private final MemberRepository memberRepository;
 
     @Override

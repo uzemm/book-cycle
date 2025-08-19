@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.wish.service;
 
 import com.uzem.book_cycle.admin.entity.SalesBook;
-import com.uzem.book_cycle.admin.repository.SalesRepository;
+import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.SalesException;
 import com.uzem.book_cycle.exception.WishException;
@@ -25,7 +25,7 @@ import static com.uzem.book_cycle.wish.type.WishErrorCode.*;
 @RequiredArgsConstructor
 public class WishServiceImpl implements WishService {
 
-    private final SalesRepository salesRepository;
+    private final AdminSalesRepository salesRepository;
     private final WishRepository wishRepository;
     private final MemberRepository memberRepository;
 

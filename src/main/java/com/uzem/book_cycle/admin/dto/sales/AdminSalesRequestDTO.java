@@ -9,9 +9,9 @@ import lombok.*;
 @Getter
 @AllArgsConstructor
 @Builder
-public class SalesRequestDTO {
+public class AdminSalesRequestDTO {
 
-    private String id;
+    private Long id;
     private String title;
     private String author;
     private String publisher;
