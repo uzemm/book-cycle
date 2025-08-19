@@ -58,6 +58,7 @@ public class Member extends BaseEntity {
     private SocialType socialType;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<RentalHistory> rentalHistories = new ArrayList<>();
 
     public void activateMember(){

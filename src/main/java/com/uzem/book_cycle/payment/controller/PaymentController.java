@@ -62,7 +62,7 @@ public class PaymentController {
             return  ResponseEntity.ok(response);
         } catch (OrderException e) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getErrorMessage(), "code", e.getOrderErrorCode()));
+                    .body(Map.of("message", e.getMessage(), "code", e.getOrderErrorCode()));
         }
     }
 

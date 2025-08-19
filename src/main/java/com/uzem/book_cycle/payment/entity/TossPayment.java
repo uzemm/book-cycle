@@ -53,6 +53,7 @@ public class TossPayment{
     private OffsetDateTime approvedAt;
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Cancel> cancels = new ArrayList<>();
 
     private PaymentPurpose paymentPurpose;

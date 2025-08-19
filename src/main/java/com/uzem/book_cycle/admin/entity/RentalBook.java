@@ -60,6 +60,7 @@ public class RentalBook extends BaseEntity {
     private boolean isPublic;
 
     @OneToMany(mappedBy = "rentalBook", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Reservation> reservations = new ArrayList<>(); // 양방향
 
     public static RentalBook from(AdminRentalRequestDTO request) {
