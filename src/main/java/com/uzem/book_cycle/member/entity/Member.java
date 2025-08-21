@@ -120,4 +120,20 @@ public class Member extends BaseEntity {
         // 대여 횟수 복원
         this.rentalCnt = Math.max(0, this.rentalCnt - rentalCnt);
     }
+
+    public void changeStatus(MemberStatus status) {
+        this.status = status;
+    }
+
+    public void changePoint(long amount) {
+        long newPoint = this.point + amount;
+        if(newPoint < 0){
+            throw new MemberException(INSUFFICIENT_POINTS);
+        }
+        this.point += point;
+    }
+
+    public void resetPassword(String tempPassword){
+        this.password = tempPassword;
+    }
 }
