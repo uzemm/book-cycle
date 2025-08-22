@@ -74,6 +74,21 @@ public class AdminMemberServiceImpl implements AdminMemberService{
         return adminMemberRepository.getMemberDetail(memberId);
     }
 
+    @Transactional
+    public void forceDeleteMember(Long memberId, String adminName) {
+        Member member = getMember(memberId);
+
+        // 관리자는 검증 안 걸고 바로 삭제 허용 (정책에 따라 다름)
+        member.deleteMember();
+
+        // 로그 남기기
+        adminLogRepository.save(AdminLog.of(member, FORCE_DELETE, "관리자 강제 탈퇴", adminName));
+
+        // refreshToken 삭제
+        redisUtil.delete("refreshToken:" + memberId);
+    }
+
+
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MEMBER_NOT_FOUND));

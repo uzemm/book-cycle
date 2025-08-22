@@ -11,7 +11,6 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface AdminMemberService {
-
     void memberStatusUpdate(
             Long memberId, AdminMemberStatusUpdateRequest request, String adminName);
 
@@ -20,5 +19,5 @@ public interface AdminMemberService {
     Page<AdminMemberPreviewDTO> searchMember(
             String name, String email, MemberStatus status, Pageable pageable);
     Optional<AdminMemberDetailDTO> getMemberDetail(Long memberId);
-
+    void forceDeleteMember(Long memberId, String adminName);
 }

@@ -50,4 +50,24 @@ public class AdminMemberController {
         return ResponseEntity.ok(AdminResponse.of("회원 상태가 " + request.getStatus() + "로 변경되었습니다."));
     }
 
+    @PatchMapping("/{memberId}/point")
+    public ResponseEntity<AdminResponse> updatePoint(
+            @PathVariable Long memberId,
+            @RequestBody @Valid AdminMemberPointUpdateRequest request,
+            @AuthenticationPrincipal CustomUserDetails admin) {
+        adminMemberService.updatePoints(memberId, request, admin.getUsername());
+
+        return ResponseEntity.ok(AdminResponse.of("회원 포인트가 " + request.getAmount() + "로 변경되었습니다."));
+    }
+
+    @DeleteMapping("{memberId}")
+    public ResponseEntity<AdminResponse> deleteMember(
+            @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserDetails admin
+    ){
+        adminMemberService.forceDeleteMember(memberId, admin.getUsername());
+
+        return ResponseEntity.ok(AdminResponse.of("회원을 강제 탈퇴 하였습니다."));
+    }
+
 }
