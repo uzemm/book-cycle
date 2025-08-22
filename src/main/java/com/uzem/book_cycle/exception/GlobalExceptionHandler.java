@@ -61,9 +61,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PaymentException.class)
     public ResponseEntity<ErrorResponse> handlePaymentException(PaymentException e) {
-        log.error("{} is occurred.", e.getPaymentErrorCode());
-
         PaymentErrorCode code = e.getPaymentErrorCode();
+
+        log.error("Payment error occurred. code={}, message={}, originalMessage={}",
+                code, code.getMessage(), e.getOriginalMessage());
 
         return ResponseEntity
                 .status(code.getHttpStatus())
