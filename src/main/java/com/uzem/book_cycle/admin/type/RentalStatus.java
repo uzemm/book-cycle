@@ -1,5 +1,5 @@
 package com.uzem.book_cycle.admin.type;
 
 public enum RentalStatus {
-    AVAILABLE, RENTED,  OVERDUE, PENDING_PAYMENT, RETURNED;
+    AVAILABLE, RENTED,  OVERDUE, PENDING_PAYMENT, RETURNED, CANCELD;
 }

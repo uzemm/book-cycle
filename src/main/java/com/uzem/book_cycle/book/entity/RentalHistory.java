@@ -13,6 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 
@@ -53,6 +54,8 @@ public class RentalHistory extends BaseEntity {
     @JoinColumn(name = "order_Id")
     private Order order;
 
+    private LocalDateTime canceledAt;
+
     public static RentalHistory from(RentalBook rentalBook, Member member,
                                      Order order, LocalDate now) {
         return RentalHistory.builder()
@@ -91,6 +94,11 @@ public class RentalHistory extends BaseEntity {
 
     public void setMember(Member member) {
         this.member = member;
+    }
+
+    public void cancel() {
+        this.rentalStatus = CANCELD;
+        this.canceledAt = LocalDateTime.now();
     }
 
 }
