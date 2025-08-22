@@ -4,6 +4,7 @@ import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.repository.RentalHistoryRepositoryCustom;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.entity.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -23,5 +24,6 @@ public interface RentalHistoryRepository extends JpaRepository<RentalHistory, Lo
     List<RentalHistory> findAllByOrderId(Long orderId);
     List<RentalHistory> findAllByReturnDate(LocalDate minus);
     boolean existsByRentalStatusAndOrderId(RentalStatus rentalStatus, Long orderId);
+    boolean existsByMemberAndRentalStatusIn(Member member, List<RentalStatus> rentalStatuses);
     Optional<RentalHistory> findByOrderAndRentalBook(Order order, RentalBook rentalBook);
 }
