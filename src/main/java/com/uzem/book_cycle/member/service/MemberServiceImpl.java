@@ -3,6 +3,7 @@ package com.uzem.book_cycle.member.service;
 import com.uzem.book_cycle.auth.email.entity.EmailVerification;
 import com.uzem.book_cycle.auth.email.repository.EmailVerificationRepository;
 import com.uzem.book_cycle.auth.email.service.EmailService;
+import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.dto.*;
@@ -19,12 +20,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.uzem.book_cycle.admin.type.RentalStatus.OVERDUE;
+import static com.uzem.book_cycle.admin.type.RentalStatus.RENTED;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.*;
+import static com.uzem.book_cycle.order.type.OrderStatus.*;
+import static com.uzem.book_cycle.order.type.ShippingStatus.PREPARING;
 import static com.uzem.book_cycle.order.type.ShippingStatus.SHIPPED;
 
 @Slf4j
@@ -42,6 +48,7 @@ public class MemberServiceImpl implements MemberService{
     private final EmailVerificationRepository emailRepository;
     private final ReservationRepository reservationRepository;
     private final OrderRepository orderRepository;
+    private final RentalHistoryRepository rentalHistoryRepository;
 
     // 내정보 미리보기
     @Transactional(readOnly = true)
@@ -172,23 +179,39 @@ public class MemberServiceImpl implements MemberService{
         }
     }
 
-    // 회원 탈퇴
+    @Transactional
     public void deleteMember(Long memberId) {
-        Member member = memberRepository.findByIdAndIsDeletedFalse(memberId).orElseThrow(
-                () -> new MemberException(MEMBER_NOT_FOUND));
-        if(member.getRentalCnt() != 0){ // 대여중
-            throw new MemberException(MEMBER_HAS_ACTIVE_RENTALS);
-        }
-        if(reservationRepository.existsByMemberId(memberId)){ // 예약도서
-            throw new MemberException(MEMBER_HAS_ACTIVE_RESERVATIONS);
-        }
-        // 배송중인 도서
-        if(orderRepository.existsByMemberAndShippingStatus(member, SHIPPED)){
-            throw new MemberException(MEMBER_HAS_ACTIVE_DELIVERY);
-        }
-        member.deleteMember(); // isDeleted = true, point = 0
-        // 회원 탈퇴 시 리프레시 토큰 삭제 (로그인 유지 X)
+        Member member = getMember(memberId);
+
+        // 공통 검증
+        validateDeletable(member);
+
+        // 탈퇴 처리
+        member.deleteMember();
+
+        // refreshToken 삭제
         redisUtil.delete("refreshToken:" + memberId);
+    }
+
+    // 회원 탈퇴
+    public void validateDeletable(Member member) {
+        // 1. 대여 중(대여 + 연체)
+        boolean hasRentals = rentalHistoryRepository
+                .existsByMemberAndRentalStatusIn(member, List.of(RENTED, OVERDUE));
+        if(hasRentals) throw new MemberException(MEMBER_HAS_ACTIVE_RENTALS);
+
+        // 2. 예약 존재 (isActive && deadline > now)
+        boolean hasReservations  = reservationRepository
+                .existsByMemberAndActiveTrueAndPaymentDeadlineAfter(member, LocalDate.now());
+        if(hasReservations ) throw new MemberException(MEMBER_HAS_ACTIVE_RESERVATIONS);
+
+        // 3. 주문 미완료 (배송 준비/배송 중 포함)
+        boolean hasOrders = orderRepository.existsByMemberAndOrderStatusInAndShippingStatusIn(
+                member,
+                List.of(PAID, CANCEL_REQUESTED, CANCEL_PENDING),
+                List.of(PREPARING, SHIPPED));
+
+        if(hasOrders) throw new MemberException(MEMBER_HAS_ACTIVE_DELIVERY);
     }
 
     // 주문 조회
