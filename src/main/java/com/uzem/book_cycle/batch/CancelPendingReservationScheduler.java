@@ -24,7 +24,7 @@ public class CancelPendingReservationScheduler {
     public void runCancelExpiredReservationsBatch() {
 
         List<Reservation> reservations = reservationRepository
-                .findAllByRentalStatusAndPaymentDeadlineBefore(
+                .findAllByRentalBook_RentalStatusAndIsActiveTrueAndPaymentDeadlineBefore(
                         PENDING_PAYMENT, LocalDate.now());
 
         rentalService.updateCancelPendingPayment(reservations);
