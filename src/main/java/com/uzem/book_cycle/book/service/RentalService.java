@@ -22,4 +22,6 @@ public interface RentalService {
     List<OverdueListResponseDTO> getMyOverdue(Long memberId);
     List<RentalHistoryListResponseDTO> getMyRentalHistories(Long memberId);
     void updateCancelPendingPayment(List<Reservation> reservations);
+    void restoreRentalBookStatus(RentalBook rentalBook);
+    void restoreRentalHistory(Order order, RentalBook rentalBook);
 }

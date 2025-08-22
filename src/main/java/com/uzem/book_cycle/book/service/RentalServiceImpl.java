@@ -14,6 +14,7 @@ import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.notification.type.NotificationType;
 import com.uzem.book_cycle.order.entity.Order;
+import com.uzem.book_cycle.order.entity.OrderItem;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.service.PaymentService;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,6 +33,7 @@ import java.util.stream.Collectors;
 import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
+import static com.uzem.book_cycle.order.type.ItemType.RENTAL;
 
 @Slf4j
 @Service
@@ -42,6 +45,8 @@ public class RentalServiceImpl implements RentalService {
     private final PaymentService paymentService;
     private final MemberRepository memberRepository;
     private final ApplicationEventPublisher eventPublisher;
+
+    private static final int PAYMENT_DEADLINE_DAYS = 1;
 
     // 대여 이력 생성
     public void createRentalHistory(RentalBook rentalBook, Member member,
@@ -343,5 +348,37 @@ public class RentalServiceImpl implements RentalService {
     private Member findByMemberId(Long memberId) {
         return memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MEMBER_NOT_FOUND));
+    }
+
+
+    public void restoreRentalBookStatus(RentalBook rentalBook) {
+        boolean hasReservation = rentalBook.getReservations().stream()
+                .anyMatch(Reservation::isActive);
+        if(hasReservation) { // 예약자 있음
+            rentalBook.updatePendingPayment(); // 결제대기 상태로 변경
+
+            // 예약순번 1번 결제기한 부여
+            rentalBook.getReservations().stream()
+                    .filter(Reservation::isActive)
+                    .min(Comparator.comparingInt(Reservation::getReservationOrder))
+                    .ifPresent(reservation ->
+                            reservation.updatePaymentDeadline(LocalDate.now()
+                                    .plusDays(PAYMENT_DEADLINE_DAYS))
+                    );
+        } else{
+            rentalBook.updateAvailable(); // 대여가능 변경
+        }
+    }
+
+    public void restoreRentalHistory(Order order, RentalBook rentalBook) {
+        for(OrderItem item : order.getOrderItems()){
+            if(item.getItemType() == RENTAL){
+                RentalHistory rentalHistory = rentalHistoryRepository
+                        .findByOrderAndRentalBook(order, item.getRentalBook())
+                        .orElseThrow(() -> new RentalException(RENTAL_HISTORY_NOT_FOUND));
+
+                rentalHistory.cancel();
+            }
+        }
     }
 }
