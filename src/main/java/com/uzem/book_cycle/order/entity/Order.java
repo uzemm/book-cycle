@@ -136,7 +136,17 @@ public class Order extends BaseEntity {
         this.orderStatus = COMPLETED;
     }
 
-    public void cancelOrder() {
-        this.orderStatus = CANCELED;
+    public void cancelRequestOrder() {
+        this.orderStatus = CANCEL_REQUESTED;
     }
+
+    public void cancelOrder(CancelReason cancelReason) {
+        this.orderStatus = CANCELED;
+        this.cancelReason = cancelReason;
+    }
+
+    public void cancelPending(){
+        this.orderStatus = CANCEL_PENDING;
+    }
+
 }
