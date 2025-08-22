@@ -9,10 +9,12 @@ import com.uzem.book_cycle.order.repository.OrderRepository;
 import com.uzem.book_cycle.payment.dto.CancelPaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
 import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
+import com.uzem.book_cycle.payment.dto.TossErrorResponse;
 import com.uzem.book_cycle.payment.entity.Cancel;
 import com.uzem.book_cycle.payment.entity.TossPayment;
 import com.uzem.book_cycle.payment.repository.CancelRepository;
 import com.uzem.book_cycle.payment.repository.PaymentRepository;
+import com.uzem.book_cycle.payment.type.PaymentErrorCode;
 import com.uzem.book_cycle.payment.type.PaymentPurpose;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -71,18 +73,26 @@ public class PaymentServiceImpl implements PaymentService{
 
     @Transactional
     public PaymentResponseDTO processCancelPayment(CancelPaymentRequestDTO request) {
+        // 1. 외부 API 호출
         PaymentResponseDTO tossResponse = requestCancelTossApi(request);
+
+        // 2. 결제 엔티티 조회
         TossPayment tossPayment = paymentRepository.findByPaymentKey(request.getPaymentKey()).orElseThrow(
                 () -> new OrderException(ORDER_NOT_FOUND));
+
+        // 3. 취소 엔티티 생성
         List<Cancel> cancels = createCancelPayment(request, tossResponse, tossPayment);
 
+        // 4. 상태 변경
         tossPayment.setStatus(CANCELED);
-        for (Cancel cancel : cancels) {
-            tossPayment.addCancel(cancel);
-            cancelRepository.save(cancel);
-        }
 
+        // 5. 취소 내역 저장
+        cancels.forEach(tossPayment::addCancel);
+
+        // 6. 결제 엔티티 저장 (cascade 설정되어 있으면 cancelRepository.save() 생략 가능)
         paymentRepository.save(tossPayment);
+
+        // 7. 응답 반환
         return PaymentResponseDTO.from(tossPayment);
     }
 
@@ -116,10 +126,19 @@ public class PaymentServiceImpl implements PaymentService{
 
         } catch (HttpClientErrorException e) {
             // 토스 에러 json 파싱
-            log.error("토스 요청 오류 발생 : {}", e.getResponseBodyAsString());
-            throw new PaymentException(TOSS_PAYMENT_REQUEST_FAILED);
+            String response = e.getResponseBodyAsString();
+            log.error("토스 요청 오류 발생: {}", response);
+
+            try {
+                TossErrorResponse tossError = objectMapper.readValue(response, TossErrorResponse.class);
+                PaymentErrorCode errorCode = PaymentErrorCode.fromTossCode(tossError.getCode());
+
+                throw new PaymentException(errorCode, tossError.getMessage());
+            } catch (JsonProcessingException ex) {
+                throw new PaymentException(PaymentErrorCode.SYSTEM_ERROR, "토스 에러 파싱 실패");
+            }
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new PaymentException(PaymentErrorCode.SYSTEM_ERROR, "결제 요청 JSON 직렬화 실패");
         }
     }
 
@@ -163,7 +182,7 @@ public class PaymentServiceImpl implements PaymentService{
     // TossPayment 생성
     private static TossPayment createTossPayment(PaymentResponseDTO tossResponse,
                                                  Order order, PaymentPurpose paymentPurpose) {
-        TossPayment tossPayment = TossPayment.builder()
+        return TossPayment.builder()
                 .paymentKey(tossResponse.getPaymentKey())
                 .tossOrderId(tossResponse.getOrderId())
                 .order(order)
@@ -175,7 +194,6 @@ public class PaymentServiceImpl implements PaymentService{
                 .type(tossResponse.getType())
                 .paymentPurpose(paymentPurpose)
                 .build();
-        return tossPayment;
     }
 
     // 정상 반납 경우 - 결제 x
