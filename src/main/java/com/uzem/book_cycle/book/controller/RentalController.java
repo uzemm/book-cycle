@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.book.controller;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.book.dto.ReservationRequestDTO;
 import com.uzem.book_cycle.book.dto.ReservationResponseDTO;
