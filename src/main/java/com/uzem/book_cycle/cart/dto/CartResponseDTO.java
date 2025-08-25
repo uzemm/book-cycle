@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.cart.dto;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.SalesBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.admin.type.SalesStatus;
 import com.uzem.book_cycle.cart.entity.Cart;

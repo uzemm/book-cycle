@@ -1,6 +1,5 @@
 package com.uzem.book_cycle.book.entity;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import jakarta.persistence.*;

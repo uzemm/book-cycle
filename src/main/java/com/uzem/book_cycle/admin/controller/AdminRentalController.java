@@ -3,7 +3,7 @@ package com.uzem.book_cycle.admin.controller;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalStatusDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.admin.service.AdminRentalService;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import jakarta.validation.Valid;

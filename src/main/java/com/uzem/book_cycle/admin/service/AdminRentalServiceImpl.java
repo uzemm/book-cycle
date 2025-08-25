@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.admin.service;
 
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalStatusDTO;
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalResponseDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;

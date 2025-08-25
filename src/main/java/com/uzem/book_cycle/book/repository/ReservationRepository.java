@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.book.repository;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.member.entity.Member;

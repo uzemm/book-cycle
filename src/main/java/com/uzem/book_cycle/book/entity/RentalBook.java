@@ -1,11 +1,10 @@
-package com.uzem.book_cycle.admin.entity;
+package com.uzem.book_cycle.book.entity;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
-import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;

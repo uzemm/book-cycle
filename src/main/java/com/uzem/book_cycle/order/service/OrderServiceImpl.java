@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.order.service;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.book.entity.Reservation;

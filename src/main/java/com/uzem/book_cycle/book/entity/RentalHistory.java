@@ -1,10 +1,10 @@
 package com.uzem.book_cycle.book.entity;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.entity.Order;
+import com.uzem.book_cycle.order.entity.OrderItem;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -54,7 +54,11 @@ public class RentalHistory extends BaseEntity {
     @JoinColumn(name = "order_Id")
     private Order order;
 
+    @OneToOne(mappedBy = "rentalHistory")
+    private OrderItem orderItem;
+
     private LocalDateTime canceledAt;
+
 
     public static RentalHistory from(RentalBook rentalBook, Member member,
                                      Order order, LocalDate now) {

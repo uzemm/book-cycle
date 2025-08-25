@@ -1,9 +1,8 @@
 package com.uzem.book_cycle.event.listener;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.book.repository.ReservationRepository;
 import com.uzem.book_cycle.event.OverdueFeeEvent;
 import com.uzem.book_cycle.event.RentalOverdueEvent;
@@ -23,7 +22,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 
-import java.util.List;
 import java.util.Optional;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
@@ -35,7 +33,6 @@ import static com.uzem.book_cycle.notification.type.NotificationType.RETURN_DUE;
 @RequiredArgsConstructor
 public class RentalOverdueEventListener {
     private final NotificationRepository notificationRepository;
-    private final RentalHistoryRepository rentalHistoryRepository;
     private final ReservationRepository reservationRepository;
     private final SimpMessagingTemplate messagingTemplate;
 

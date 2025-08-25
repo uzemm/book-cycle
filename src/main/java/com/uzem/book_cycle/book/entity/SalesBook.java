@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.admin.entity;
+package com.uzem.book_cycle.book.entity;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
 import com.uzem.book_cycle.admin.dto.sales.AdminSalesRequestDTO;

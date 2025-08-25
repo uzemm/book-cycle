@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.event.listener;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.book.entity.RentalHistory;
 import com.uzem.book_cycle.book.entity.Reservation;
 import com.uzem.book_cycle.book.repository.RentalHistoryRepository;

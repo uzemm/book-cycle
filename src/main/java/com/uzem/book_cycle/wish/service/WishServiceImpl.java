@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.wish.service;
 
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.book.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.SalesException;
