@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.notification.entity;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.book.entity.RentalBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.type.NotificationType;
@@ -12,6 +12,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+@Table(
+        name = "notification",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_notification_member_order_type",
+                        columnNames = {"member_id", "order_id", "type"}
+                ),
+                @UniqueConstraint(
+                        name = "uk_notification_member_rentalbook_type",
+                        columnNames = {"member_id", "rental_book_id", "type"}
+                )
+        }
+)
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,9 +41,11 @@ public class Notification extends BaseEntity {
     private RentalBook rentalBook;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
     private Order order;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private NotificationType type;
 
     @Column(nullable = false)

@@ -14,7 +14,7 @@ public enum NotificationType {
     RETURN_DUE("'%s'의 반납 예정일이 3일 남았습니다.",
             "'%s' 외 %d권의 반납 예정일이 3일 남았습니다."),
 
-    ORDER_SHIPPED("주문한 도서가 발송되었습니다.", null),
+    ORDER_SHIPPED("주문한 도서가 발송되었습니다. 운송장은 '%s' 입니다.", null),
 
     QUESTION_ANSWER("문의에 대한 답변이 도착하였습니다.", null),
 
