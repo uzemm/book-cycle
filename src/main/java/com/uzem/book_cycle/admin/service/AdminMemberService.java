@@ -8,7 +8,6 @@ import com.uzem.book_cycle.member.type.MemberStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.Optional;
 
 public interface AdminMemberService {
     void memberStatusUpdate(
@@ -18,6 +17,6 @@ public interface AdminMemberService {
             Long memberId, AdminMemberPointUpdateRequest request, String adminName);
     Page<AdminMemberPreviewDTO> searchMember(
             String name, String email, MemberStatus status, Pageable pageable);
-    Optional<AdminMemberDetailDTO> getMemberDetail(Long memberId);
+    AdminMemberDetailDTO getMemberDetail(Long memberId);
     void forceDeleteMember(Long memberId, String adminName);
 }

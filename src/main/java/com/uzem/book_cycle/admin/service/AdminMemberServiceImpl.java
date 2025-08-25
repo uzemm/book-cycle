@@ -70,8 +70,9 @@ public class AdminMemberServiceImpl implements AdminMemberService{
     }
 
     @Transactional(readOnly = true)
-    public Optional<AdminMemberDetailDTO> getMemberDetail(Long memberId) {
-        return adminMemberRepository.getMemberDetail(memberId);
+    public AdminMemberDetailDTO getMemberDetail(Long memberId) {
+        return adminMemberRepository.getMemberDetail(memberId)
+                .orElseThrow(() -> new MemberException(MEMBER_NOT_FOUND));
     }
 
     @Transactional
