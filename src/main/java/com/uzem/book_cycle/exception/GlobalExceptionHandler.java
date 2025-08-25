@@ -3,6 +3,7 @@ package com.uzem.book_cycle.exception;
 import com.uzem.book_cycle.admin.type.RentalErrorCode;
 import com.uzem.book_cycle.admin.type.SalesErrorCode;
 import com.uzem.book_cycle.cart.type.CartErrorCode;
+import com.uzem.book_cycle.common.ApiResponse;
 import com.uzem.book_cycle.member.type.MemberErrorCode;
 import com.uzem.book_cycle.order.type.OrderErrorCode;
 import com.uzem.book_cycle.payment.type.PaymentErrorCode;
@@ -28,7 +29,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenException.class)
     public ResponseEntity<ErrorResponse> handleTokenException(TokenException e) {
-        log.error("{} is occurred.", e.getTokenErrorCode());
 
         TokenErrorCode code = e.getTokenErrorCode();
 
@@ -38,19 +38,15 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MemberException.class)
-    public ResponseEntity<ErrorResponse> handleMemberException(MemberException e) {
-        log.error("{} is occurred.", e.getMemberErrorCode());
-
-        MemberErrorCode code = e.getMemberErrorCode();
+    public ResponseEntity<ApiResponse<Void>> handleMemberException(MemberException e) {
 
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getMemberErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getMemberErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(SalesException.class)
     public ResponseEntity<ErrorResponse> handleSaleException(SalesException e) {
-        log.error("{} is occurred.", e.getSalesErrorCode());
 
         SalesErrorCode code = e.getSalesErrorCode();
 
@@ -60,97 +56,100 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(PaymentException.class)
-    public ResponseEntity<ErrorResponse> handlePaymentException(PaymentException e) {
+    public ResponseEntity<ApiResponse<Void>> handlePaymentException(PaymentException e) {
         PaymentErrorCode code = e.getPaymentErrorCode();
 
-        log.error("Payment error occurred. code={}, message={}, originalMessage={}",
-                code, code.getMessage(), e.getOriginalMessage());
+        // 비즈니스 예외는 warn, 시스템 오류성 예외는 error로 구분 가능
+        if(code.isSystemError()){
+            log.error("Payment error occurred. code={}, message={}, originalMessage={}",
+                    code.getCode(), code.getMessage(), e.getOriginalMessage());
+        } else{
+            log.error("Payment business error occurred. code={}, message={}, originalMessage={}",
+                    code.getCode(), code.getMessage(), e.getOriginalMessage());
+        }
 
         return ResponseEntity
                 .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .body(ApiResponse.error(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(RentalException.class)
-    public ResponseEntity<ErrorResponse> handleRentalException(RentalException e) {
-        log.error("{} is occurred.", e.getRentalErrorCode());
-
-        RentalErrorCode code = e.getRentalErrorCode();
-
+    public ResponseEntity<ApiResponse<Void>> handleRentalException(RentalException e) {
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getRentalErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getRentalErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(WishException.class)
-    public ResponseEntity<ErrorResponse> handleWishException(WishException e) {
-        log.error("{} is occurred.", e.getWishErrorCode());
-
-        WishErrorCode code = e.getWishErrorCode();
-
+    public ResponseEntity<ApiResponse<Void>> handleWishException(WishException e) {
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getWishErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getWishErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(CartException.class)
-    public ResponseEntity<ErrorResponse> handleWishException(CartException e) {
-        log.error("{} is occurred.", e.getCartErrorCode());
-
-        CartErrorCode code = e.getCartErrorCode();
-
+    public ResponseEntity<ApiResponse<Void>> handleCartException(CartException e) {
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getCartErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getCartErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(OrderException.class)
-    public ResponseEntity<ErrorResponse> handleOrderException(OrderException e) {
-        log.error("{} is occurred.", e.getOrderErrorCode());
-
-        OrderErrorCode code = e.getOrderErrorCode();
-
+    public ResponseEntity<ApiResponse<Void>> handleOrderException(OrderException e) {
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getOrderErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getOrderErrorCode().name(), e.getMessage()));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<Void>> handleException(Exception e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.error("INTERNAL_SERVER_ERROR", "시스템 오류가 발생했습니다."));
     }
 
     // 유효성 검사 실패
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 errors.put(error.getField(), error.getDefaultMessage())
         );
-        return ResponseEntity.badRequest().body(errors);
+        return ResponseEntity.badRequest().body(ApiResponse.error("VALIDATION_ERROR", errors.toString()));
     }
 
     // 잘못된 요청
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex) {
-        return ResponseEntity.badRequest().body(ex.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ApiResponse.error("INVALID_ARGUMENT", ex.getMessage()));
     }
 
     // 인증 실패
     @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<String> handleAuthenticationException(AuthenticationException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증 실패: " + ex.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleAuthenticationException(AuthenticationException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ApiResponse.error("UNAUTHORIZED", "인증 실패: " + ex.getMessage()));
     }
 
     // 권한 없음
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("권한이 없습니다.");
+    public ResponseEntity<ApiResponse<Void>> handleAccessDeniedException(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("FORBIDDEN", "권한이 없습니다."));
     }
 
     // 찾을 수 없는 데이터
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFoundException(EntityNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("데이터를 찾을 수 없습니다.");
+    public ResponseEntity<ApiResponse<Void>> handleEntityNotFoundException(EntityNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error("NOT_FOUND", "데이터를 찾을 수 없습니다."));
     }
 
+    // JSON 파싱 오류
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<String> handleJsonParseException(HttpMessageNotReadableException ex) {
-        return ResponseEntity.badRequest().body("JSON 형식 오류: " + ex.getMessage());
+    public ResponseEntity<ApiResponse<Void>> handleJsonParseException(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error("JSON_PARSE_ERROR", "JSON 형식 오류: " + ex.getMessage()));
     }
+
 }
