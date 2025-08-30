@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.wish.service;
 
-import com.uzem.book_cycle.book.entity.SalesBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.exception.SalesException;
@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.uzem.book_cycle.admin.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.sales.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
 import static com.uzem.book_cycle.wish.type.WishErrorCode.*;
 
