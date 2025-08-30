@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.order.dto;
 
-import com.uzem.book_cycle.book.dto.RentalHistoryDTO;
+import com.uzem.book_cycle.rental.dto.RentalHistoryDTO;
 import com.uzem.book_cycle.order.entity.OrderItem;
 import com.uzem.book_cycle.order.type.ItemType;
 import lombok.AllArgsConstructor;

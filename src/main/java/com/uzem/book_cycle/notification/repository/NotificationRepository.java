@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.notification.repository;
 
-import com.uzem.book_cycle.book.entity.RentalBook;
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.entity.Notification;
 import com.uzem.book_cycle.notification.type.NotificationType;

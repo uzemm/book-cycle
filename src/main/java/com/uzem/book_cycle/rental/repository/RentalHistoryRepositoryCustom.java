@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.admin.repository;
+package com.uzem.book_cycle.rental.repository;
 
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalStatusDTO;
 import com.uzem.book_cycle.admin.type.RentalStatus;

@@ -1,13 +1,13 @@
 package com.uzem.book_cycle.admin.service;
 
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalStatusDTO;
-import com.uzem.book_cycle.book.entity.RentalBook;
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalResponseDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.exception.RentalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 
-import static com.uzem.book_cycle.admin.type.RentalErrorCode.RENTAL_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.rental.type.RentalErrorCode.RENTAL_BOOK_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor

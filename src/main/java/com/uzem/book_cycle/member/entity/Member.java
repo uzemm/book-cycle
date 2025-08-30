@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.member.entity;
 
-import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.type.MemberStatus;

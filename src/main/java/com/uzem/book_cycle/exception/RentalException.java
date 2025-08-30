@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.exception;
 
-import com.uzem.book_cycle.admin.type.RentalErrorCode;
+import com.uzem.book_cycle.rental.type.RentalErrorCode;
 import lombok.*;
 
 @Getter

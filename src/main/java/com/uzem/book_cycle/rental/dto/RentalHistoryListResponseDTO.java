@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.book.dto;
+package com.uzem.book_cycle.rental.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

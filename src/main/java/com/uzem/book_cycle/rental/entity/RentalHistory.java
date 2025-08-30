@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.book.entity;
+package com.uzem.book_cycle.rental.entity;
 
 import com.uzem.book_cycle.admin.type.RentalStatus;
 import com.uzem.book_cycle.entity.BaseEntity;
@@ -101,7 +101,7 @@ public class RentalHistory extends BaseEntity {
     }
 
     public void cancel() {
-        this.rentalStatus = CANCELD;
+        this.rentalStatus = CANCELED;
         this.canceledAt = LocalDateTime.now();
     }
 

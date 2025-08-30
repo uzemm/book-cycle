@@ -1,10 +1,10 @@
 package com.uzem.book_cycle.member.service;
 
-import com.uzem.book_cycle.auth.email.entity.EmailVerification;
-import com.uzem.book_cycle.auth.email.repository.EmailVerificationRepository;
-import com.uzem.book_cycle.auth.email.service.EmailService;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
-import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.auth.entity.EmailVerification;
+import com.uzem.book_cycle.auth.repository.EmailVerificationRepository;
+import com.uzem.book_cycle.auth.service.EmailService;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.reservation.repository.ReservationRepository;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.dto.*;
 import com.uzem.book_cycle.member.entity.Member;
@@ -202,7 +202,7 @@ public class MemberServiceImpl implements MemberService{
 
         // 2. 예약 존재 (isActive && deadline > now)
         boolean hasReservations  = reservationRepository
-                .existsByMemberAndActiveTrueAndPaymentDeadlineAfter(member, LocalDate.now());
+                .existsByMemberAndIsActiveTrueAndPaymentDeadlineAfter(member, LocalDate.now());
         if(hasReservations ) throw new MemberException(MEMBER_HAS_ACTIVE_RESERVATIONS);
 
         // 3. 주문 미완료 (배송 준비/배송 중 포함)

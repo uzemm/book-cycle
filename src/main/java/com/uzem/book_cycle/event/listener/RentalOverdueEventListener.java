@@ -1,9 +1,9 @@
 package com.uzem.book_cycle.event.listener;
 
-import com.uzem.book_cycle.book.entity.RentalBook;
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.rental.entity.RentalBook;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
+import com.uzem.book_cycle.reservation.entity.Reservation;
+import com.uzem.book_cycle.reservation.repository.ReservationRepository;
 import com.uzem.book_cycle.event.OverdueFeeEvent;
 import com.uzem.book_cycle.event.RentalOverdueEvent;
 import com.uzem.book_cycle.event.RentalReturnDueEvent;

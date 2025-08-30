@@ -1,8 +1,8 @@
 package com.uzem.book_cycle.order.entity;
 
-import com.uzem.book_cycle.book.entity.RentalBook;
-import com.uzem.book_cycle.book.entity.SalesBook;
-import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.rental.entity.RentalBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.order.type.ItemType;
 import jakarta.persistence.*;

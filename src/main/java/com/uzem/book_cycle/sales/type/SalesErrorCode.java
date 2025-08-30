@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.admin.type;
+package com.uzem.book_cycle.sales.type;
 
 import com.uzem.book_cycle.exception.ErrorCode;
 import lombok.AllArgsConstructor;

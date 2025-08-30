@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.admin.repository;
+package com.uzem.book_cycle.rental.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.Projections;

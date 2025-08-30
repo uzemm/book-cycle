@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.batch;
 
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.event.RentalReturnDueEvent;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.notification.type.NotificationType;

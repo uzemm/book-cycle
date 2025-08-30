@@ -1,7 +1,7 @@
-package com.uzem.book_cycle.book.dto;
+package com.uzem.book_cycle.rental.dto;
 
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

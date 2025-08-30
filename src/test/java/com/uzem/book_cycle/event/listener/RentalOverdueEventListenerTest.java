@@ -1,10 +1,10 @@
 package com.uzem.book_cycle.event.listener;
 
-import com.uzem.book_cycle.book.entity.RentalBook;
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
-import com.uzem.book_cycle.book.repository.ReservationRepository;
+import com.uzem.book_cycle.rental.entity.RentalBook;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
+import com.uzem.book_cycle.reservation.entity.Reservation;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.reservation.repository.ReservationRepository;
 import com.uzem.book_cycle.event.RentalReturnDueEvent;
 import com.uzem.book_cycle.event.ReservationFirstEvent;
 import com.uzem.book_cycle.member.entity.Member;
@@ -370,35 +370,32 @@ class RentalOverdueEventListenerTest {
     }
 
     private static RentalBook getRentalBook_PENDING_PAYMENT() {
-        RentalBook rentalBook = RentalBook.builder()
+        return RentalBook.builder()
                 .id(1L)
                 .title("오만과 편견")
                 .price(1000L)
                 .reservations(new ArrayList<>())
                 .rentalStatus(PENDING_PAYMENT)
                 .build();
-        return rentalBook;
     }
 
     private static RentalBook getRentalBook_OVERDUE() {
-        RentalBook rentalBook = RentalBook.builder()
+        return RentalBook.builder()
                 .id(1L)
                 .title("대여용 도서")
                 .price(1000L)
                 .reservations(new ArrayList<>())
                 .rentalStatus(OVERDUE)
                 .build();
-        return rentalBook;
     }
 
     private static RentalBook getRentalBook_RENTED() {
-        RentalBook rentalBook = RentalBook.builder()
+        return RentalBook.builder()
                 .id(1L)
                 .title("오만과 편견")
                 .price(1000L)
                 .reservations(new ArrayList<>())
                 .rentalStatus(RENTED)
                 .build();
-        return rentalBook;
     }
 }

@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.admin.dto.sales;
 
-import com.uzem.book_cycle.book.entity.SalesBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
 import com.uzem.book_cycle.admin.type.BookQuality;
 import com.uzem.book_cycle.admin.type.SalesStatus;
 import lombok.*;

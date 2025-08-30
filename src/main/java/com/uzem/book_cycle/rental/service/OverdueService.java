@@ -1,6 +1,6 @@
-package com.uzem.book_cycle.book.service;
+package com.uzem.book_cycle.rental.service;
 
-import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
 
 import java.time.LocalDate;
 import java.util.List;

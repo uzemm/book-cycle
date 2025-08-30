@@ -1,8 +1,8 @@
 package com.uzem.book_cycle.batch;
 
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
-import com.uzem.book_cycle.book.service.OverdueService;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.rental.service.OverdueService;
 import com.uzem.book_cycle.order.entity.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -1,6 +1,6 @@
-package com.uzem.book_cycle.book.dto;
+package com.uzem.book_cycle.rental.dto;
 
-import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.external.payment.dto.PaymentRequestDTO;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

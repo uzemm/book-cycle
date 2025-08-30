@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.book.policy;
+package com.uzem.book_cycle.rental.policy;
 
 import org.springframework.stereotype.Component;
 
