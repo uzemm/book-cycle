@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.order.dto;
 
-import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
-import com.uzem.book_cycle.payment.type.PaymentMethod;
+import com.uzem.book_cycle.external.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.external.payment.type.PaymentMethod;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;

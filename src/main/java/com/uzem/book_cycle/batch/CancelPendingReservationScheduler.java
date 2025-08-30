@@ -1,8 +1,8 @@
 package com.uzem.book_cycle.batch;
 
-import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.book.repository.ReservationRepository;
-import com.uzem.book_cycle.book.service.RentalService;
+import com.uzem.book_cycle.reservation.entity.Reservation;
+import com.uzem.book_cycle.reservation.repository.ReservationRepository;
+import com.uzem.book_cycle.reservation.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,7 +16,7 @@ import static com.uzem.book_cycle.admin.type.RentalStatus.PENDING_PAYMENT;
 @RequiredArgsConstructor
 public class CancelPendingReservationScheduler {
 
-    private final RentalService rentalService;
+    private final ReservationService reservationService;
     private final ReservationRepository reservationRepository;
 
     // 결제대기 기간 만료 배치
@@ -27,6 +27,6 @@ public class CancelPendingReservationScheduler {
                 .findAllByRentalBook_RentalStatusAndIsActiveTrueAndPaymentDeadlineBefore(
                         PENDING_PAYMENT, LocalDate.now());
 
-        rentalService.updateCancelPendingPayment(reservations);
+        reservationService.updateCancelPendingPayment(reservations);
     }
 }

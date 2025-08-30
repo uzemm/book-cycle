@@ -1,0 +1,31 @@
+package com.uzem.book_cycle.external.payment.dto;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.uzem.book_cycle.external.payment.type.PaymentStatus;
+import com.uzem.book_cycle.external.payment.type.PaymentType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PaymentRequestDTO {
+
+    private String paymentKey;
+    private PaymentType type;
+    private Long amount;
+    private PaymentStatus status;
+    private String orderName;
+
+    @JsonProperty("orderId")
+    private String tossOrderId;
+
+    // 연체료 합
+    public void updateTotalOverdueAmount(Long amount) {
+        this.amount = amount;
+    }
+}

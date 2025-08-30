@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.exception;
 
-import com.uzem.book_cycle.payment.type.PaymentErrorCode;
+import com.uzem.book_cycle.external.payment.type.PaymentErrorCode;
 import lombok.Getter;
 
 @Getter

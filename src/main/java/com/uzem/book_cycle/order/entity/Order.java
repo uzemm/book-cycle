@@ -5,7 +5,7 @@ import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.dto.OrderRequestDTO;
 import com.uzem.book_cycle.order.type.*;
-import com.uzem.book_cycle.payment.type.PaymentMethod;
+import com.uzem.book_cycle.external.payment.type.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;

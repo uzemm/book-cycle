@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.batch;
 
-import com.uzem.book_cycle.auth.email.repository.EmailVerificationRepository;
+import com.uzem.book_cycle.auth.repository.EmailVerificationRepository;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
