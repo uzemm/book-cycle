@@ -1,11 +1,11 @@
 package com.uzem.book_cycle.auth.controller;
 
 import com.uzem.book_cycle.auth.dto.*;
-import com.uzem.book_cycle.auth.email.DTO.EmailResendRequestDTO;
-import com.uzem.book_cycle.auth.email.DTO.EmailResendResponseDTO;
-import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
+import com.uzem.book_cycle.external.email.DTO.EmailResendRequestDTO;
+import com.uzem.book_cycle.external.email.DTO.EmailResendResponseDTO;
+import com.uzem.book_cycle.external.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthService;
-import com.uzem.book_cycle.auth.email.DTO.EmailVerificationRequestDTO;
+import com.uzem.book_cycle.external.email.DTO.EmailVerificationRequestDTO;
 import com.uzem.book_cycle.security.token.TokenDTO;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import io.swagger.v3.oas.annotations.Operation;

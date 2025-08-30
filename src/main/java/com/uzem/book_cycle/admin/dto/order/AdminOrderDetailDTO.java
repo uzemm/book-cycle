@@ -1,11 +1,9 @@
 package com.uzem.book_cycle.admin.dto.order;
 
 import com.uzem.book_cycle.order.dto.OrderItemResponseDTO;
-import com.uzem.book_cycle.order.entity.OrderItem;
 import com.uzem.book_cycle.order.type.OrderStatus;
 import com.uzem.book_cycle.order.type.ShippingStatus;
-import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
-import com.uzem.book_cycle.payment.entity.TossPayment;
+import com.uzem.book_cycle.external.payment.dto.PaymentResponseDTO;
 import lombok.Builder;
 import lombok.Getter;
 

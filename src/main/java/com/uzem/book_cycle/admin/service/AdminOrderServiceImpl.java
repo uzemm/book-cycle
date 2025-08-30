@@ -10,7 +10,7 @@ import com.uzem.book_cycle.order.dto.OrderItemResponseDTO;
 import com.uzem.book_cycle.order.entity.Order;
 import com.uzem.book_cycle.order.type.OrderStatus;
 import com.uzem.book_cycle.order.type.ShippingStatus;
-import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
+import com.uzem.book_cycle.external.payment.dto.PaymentResponseDTO;
 import com.uzem.book_cycle.payment.entity.TossPayment;
 import com.uzem.book_cycle.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import java.util.List;
 
 import static com.uzem.book_cycle.notification.type.NotificationType.ORDER_SHIPPED;
 import static com.uzem.book_cycle.order.type.OrderErrorCode.ORDER_NOT_FOUND;
-import static com.uzem.book_cycle.payment.type.PaymentErrorCode.PAYMENT_FAILED;
+import static com.uzem.book_cycle.external.payment.type.PaymentErrorCode.PAYMENT_FAILED;
 
 @Service
 @RequiredArgsConstructor
