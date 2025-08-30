@@ -1,19 +1,19 @@
-package com.uzem.book_cycle.naver.service;
+package com.uzem.book_cycle.external.booksearch.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.uzem.book_cycle.naver.dto.BookDTO;
-import com.uzem.book_cycle.naver.dto.BookResponseDTO;
-import com.uzem.book_cycle.exception.BookException;
+import com.uzem.book_cycle.external.booksearch.dto.BookSearchDTO;
+import com.uzem.book_cycle.external.booksearch.dto.BookSearchResponseDTO;
+import com.uzem.book_cycle.exception.BookSearchException;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
-import static com.uzem.book_cycle.naver.type.BookErrorCode.NAVER_API_ERROR;
+import static com.uzem.book_cycle.external.booksearch.type.BookSearchErrorCode.NAVER_API_ERROR;
 
 @Service
-public class BookService {
+public class BookSearchService {
 
     private final String CLIENT_ID = "네이버_클라이언트_ID";
     private final String CLIENT_SECRET = "네이버_클라이언트_Secret";
@@ -21,7 +21,7 @@ public class BookService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
-    public List<BookDTO> searchBook(String query) throws BookException {
+    public List<BookSearchDTO> searchBook(String query) throws BookSearchException {
         try{
             String apiUrl = "https://openapi.naver.com/v1/search/book.json?query=" + query  + "&display=10&sort=sim";
 
@@ -34,13 +34,13 @@ public class BookService {
 
             if(response.getStatusCode() == HttpStatus.OK){
                 // JSON을 BookResponseDTO 객체로 변환
-                BookResponseDTO bookResponseDTO = objectMapper.readValue(response.getBody(), BookResponseDTO.class);
+                BookSearchResponseDTO bookResponseDTO = objectMapper.readValue(response.getBody(), BookSearchResponseDTO.class);
                 return bookResponseDTO.getItems();
             } else {
-                throw new BookException(NAVER_API_ERROR);
+                throw new BookSearchException(NAVER_API_ERROR);
             }
         } catch (Exception e) {
-            throw new BookException(NAVER_API_ERROR);
+            throw new BookSearchException(NAVER_API_ERROR);
         }
     }
 }

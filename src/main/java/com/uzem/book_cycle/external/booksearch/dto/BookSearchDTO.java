@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.naver.dto;
+package com.uzem.book_cycle.external.booksearch.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
@@ -7,7 +7,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BookDTO {
+public class BookSearchDTO {
 
     private String title;
     private String author;

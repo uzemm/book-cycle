@@ -1,8 +1,8 @@
-package com.uzem.book_cycle.naver.controller;
+package com.uzem.book_cycle.external.booksearch.controller;
 
-import com.uzem.book_cycle.naver.dto.BookDTO;
-import com.uzem.book_cycle.naver.service.BookService;
-import com.uzem.book_cycle.exception.BookException;
+import com.uzem.book_cycle.external.booksearch.dto.BookSearchDTO;
+import com.uzem.book_cycle.external.booksearch.service.BookSearchService;
+import com.uzem.book_cycle.exception.BookSearchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -11,14 +11,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.uzem.book_cycle.naver.type.BookErrorCode.EMPTY_SEARCH_QUERY;
+import static com.uzem.book_cycle.external.booksearch.type.BookSearchErrorCode.EMPTY_SEARCH_QUERY;
 
 @Controller
 @RequiredArgsConstructor
 @RequestMapping("/books")
-public class BookController {
+public class BookSearchController {
 
-    private final BookService bookService;
+    private final BookSearchService bookService;
 
     @GetMapping("/search-form")
     @PreAuthorize("isAuthenticated()")
@@ -31,10 +31,10 @@ public class BookController {
     @PreAuthorize("isAuthenticated()")
     public String search(@RequestParam("query") String query, Model model) {
         if (query == null || query.trim().isEmpty()) {
-            throw new BookException(EMPTY_SEARCH_QUERY);
+            throw new BookSearchException(EMPTY_SEARCH_QUERY);
         }
 
-        List<BookDTO> books = bookService.searchBook(query);
+        List<BookSearchDTO> books = bookService.searchBook(query);
         model.addAttribute("books", books);
 
         return "book-list";

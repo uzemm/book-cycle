@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.naver.dto;
+package com.uzem.book_cycle.external.booksearch.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,12 +9,12 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class BookResponseDTO {
+public class BookSearchResponseDTO {
 
     private String lastBuildDate;
     private int total;
     private int start;
     private int display;
-    private List<BookDTO> items;
+    private List<BookSearchDTO> items;
 
 }
