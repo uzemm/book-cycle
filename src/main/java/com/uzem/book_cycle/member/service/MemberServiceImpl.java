@@ -2,7 +2,7 @@ package com.uzem.book_cycle.member.service;
 
 import com.uzem.book_cycle.auth.entity.EmailVerification;
 import com.uzem.book_cycle.auth.repository.EmailVerificationRepository;
-import com.uzem.book_cycle.auth.service.EmailService;
+import com.uzem.book_cycle.auth.service.EmailVerificationService;
 import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.reservation.repository.ReservationRepository;
 import com.uzem.book_cycle.exception.MemberException;
@@ -44,7 +44,7 @@ public class MemberServiceImpl implements MemberService{
     private final PasswordEncoder passwordEncoder;
     private final RedisUtil redisUtil;
     private final TokenProvider tokenProvider;
-    private final EmailService emailService;
+    private final EmailVerificationService emailService;
     private final EmailVerificationRepository emailRepository;
     private final ReservationRepository reservationRepository;
     private final OrderRepository orderRepository;
