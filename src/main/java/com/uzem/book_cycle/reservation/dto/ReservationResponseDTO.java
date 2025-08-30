@@ -1,7 +1,7 @@
-package com.uzem.book_cycle.book.dto;
+package com.uzem.book_cycle.reservation.dto;
 
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.entity.Reservation;
+import com.uzem.book_cycle.reservation.entity.Reservation;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

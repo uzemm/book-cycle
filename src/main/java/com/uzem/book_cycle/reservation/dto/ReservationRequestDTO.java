@@ -1,4 +1,4 @@
-package com.uzem.book_cycle.book.dto;
+package com.uzem.book_cycle.reservation.dto;
 
 import lombok.Getter;
 
