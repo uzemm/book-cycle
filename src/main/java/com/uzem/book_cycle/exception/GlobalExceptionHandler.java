@@ -1,14 +1,7 @@
 package com.uzem.book_cycle.exception;
 
-import com.uzem.book_cycle.admin.type.RentalErrorCode;
-import com.uzem.book_cycle.admin.type.SalesErrorCode;
-import com.uzem.book_cycle.cart.type.CartErrorCode;
 import com.uzem.book_cycle.common.ApiResponse;
-import com.uzem.book_cycle.member.type.MemberErrorCode;
-import com.uzem.book_cycle.order.type.OrderErrorCode;
-import com.uzem.book_cycle.payment.type.PaymentErrorCode;
-import com.uzem.book_cycle.security.token.TokenErrorCode;
-import com.uzem.book_cycle.wish.type.WishErrorCode;
+import com.uzem.book_cycle.external.payment.type.PaymentErrorCode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -28,13 +21,11 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenException.class)
-    public ResponseEntity<ErrorResponse> handleTokenException(TokenException e) {
-
-        TokenErrorCode code = e.getTokenErrorCode();
+    public ResponseEntity<ApiResponse<Void>> handleTokenException(TokenException e) {
 
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getTokenErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getTokenErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(MemberException.class)
@@ -46,13 +37,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(SalesException.class)
-    public ResponseEntity<ErrorResponse> handleSaleException(SalesException e) {
-
-        SalesErrorCode code = e.getSalesErrorCode();
+    public ResponseEntity<ApiResponse<Void>> handleSaleException(SalesException e) {
 
         return ResponseEntity
-                .status(code.getHttpStatus())
-                .body(new ErrorResponse(code.getCode(), code.getMessage()));
+                .status(e.getSalesErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getSalesErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(PaymentException.class)
@@ -78,6 +67,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(e.getRentalErrorCode().getHttpStatus())
                 .body(ApiResponse.error(e.getRentalErrorCode().name(), e.getMessage()));
+    }
+
+    @ExceptionHandler(ReservationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleReservationException(ReservationException e) {
+        return ResponseEntity
+                .status(e.getReservationErrorCode().getHttpStatus())
+                .body(ApiResponse.error(e.getReservationErrorCode().name(), e.getMessage()));
     }
 
     @ExceptionHandler(WishException.class)
