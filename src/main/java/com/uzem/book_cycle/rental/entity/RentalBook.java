@@ -1,11 +1,13 @@
-package com.uzem.book_cycle.book.entity;
+package com.uzem.book_cycle.rental.entity;
 
 import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
+import com.uzem.book_cycle.rental.dto.RentalPreviewDTO;
 import com.uzem.book_cycle.entity.BaseEntity;
+import com.uzem.book_cycle.exception.RentalException;
+import com.uzem.book_cycle.reservation.entity.Reservation;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -14,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.uzem.book_cycle.rental.type.RentalErrorCode.ALREADY_RENTED;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
 
 
@@ -117,7 +120,10 @@ public class RentalBook extends BaseEntity {
                 .build();
     }
 
-    public RentalStatus rentalStatusRented() {
+    public RentalStatus rented() {
+        if(this.rentalStatus == RENTED){
+            throw new RentalException(ALREADY_RENTED);
+        }
        return this.rentalStatus = RENTED;
     }
 

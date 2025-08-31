@@ -1,27 +1,21 @@
-package com.uzem.book_cycle.book.service;
+package com.uzem.book_cycle.rental.service;
 
-import com.uzem.book_cycle.book.entity.RentalBook;
-import com.uzem.book_cycle.book.dto.*;
-import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.member.entity.Member;
+import com.uzem.book_cycle.rental.dto.*;
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.order.entity.Order;
-import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.external.payment.dto.PaymentRequestDTO;
 
 import java.time.LocalDate;
 import java.util.List;
 
 public interface RentalService {
-    void createRentalHistory(RentalBook rentalBook, Member member, Order order, LocalDate now);
-    ReservationResponseDTO createReservation(RentalBook rentalBook, Long memberId);
-    void cancelMyReservation(RentalBook rentalBook, Long memberId);
-    List<ReservationResponseDTO> getMyReservations(Long memberId);
+    void createRentalHistory(Long rentalBookId, Long memberId, Long orderId, LocalDate now);
     GroupReturnResponseDTO returnRental(Long orderId, Long memberId,
                                         PaymentRequestDTO payment);
     RentalResponseDTO cancelPendingPayment(RentalBook rentalBook, Long memberId);
     List<RentalHistoryResponseDTO> getMyRentals(Long memberId);
     List<OverdueListResponseDTO> getMyOverdue(Long memberId);
     List<RentalHistoryListResponseDTO> getMyRentalHistories(Long memberId);
-    void updateCancelPendingPayment(List<Reservation> reservations);
     void restoreRentalBookStatus(RentalBook rentalBook);
     void restoreRentalHistory(Order order, RentalBook rentalBook);
 }
