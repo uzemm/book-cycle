@@ -4,16 +4,11 @@ import com.uzem.book_cycle.member.type.MemberErrorCode;
 import lombok.*;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class MemberException extends RuntimeException{
-    private MemberErrorCode memberErrorCode;
-    private String errorMessage;
+    private final MemberErrorCode memberErrorCode;
 
     public MemberException(MemberErrorCode memberErrorCode) {
+        super(memberErrorCode.getMessage()); // 부모 클래스 message 설정
         this.memberErrorCode = memberErrorCode;
-        this.errorMessage = memberErrorCode.getMessage();
     }
 }

@@ -1,5 +1,13 @@
 package com.uzem.book_cycle.exception;
 
+import com.uzem.book_cycle.admin.type.RentalErrorCode;
+import com.uzem.book_cycle.admin.type.SalesErrorCode;
+import com.uzem.book_cycle.cart.type.CartErrorCode;
+import com.uzem.book_cycle.member.type.MemberErrorCode;
+import com.uzem.book_cycle.order.type.OrderErrorCode;
+import com.uzem.book_cycle.payment.type.PaymentErrorCode;
+import com.uzem.book_cycle.security.token.TokenErrorCode;
+import com.uzem.book_cycle.wish.type.WishErrorCode;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -19,65 +27,91 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(TokenException.class)
-    public ErrorResponse handleTokenException(TokenException e) {
+    public ResponseEntity<ErrorResponse> handleTokenException(TokenException e) {
         log.error("{} is occurred.", e.getTokenErrorCode());
 
-        return new ErrorResponse(e.getTokenErrorCode().getCode(), e.getErrorMessage());
+        TokenErrorCode code = e.getTokenErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(MemberException.class)
     public ResponseEntity<ErrorResponse> handleMemberException(MemberException e) {
         log.error("{} is occurred.", e.getMemberErrorCode());
 
-        ErrorResponse errorResponse = new ErrorResponse(
-                e.getMemberErrorCode().getCode(),
-                e.getErrorMessage());
+        MemberErrorCode code = e.getMemberErrorCode();
 
         return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(errorResponse);
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(SalesException.class)
-    public ErrorResponse handleSaleException(SalesException e) {
+    public ResponseEntity<ErrorResponse> handleSaleException(SalesException e) {
         log.error("{} is occurred.", e.getSalesErrorCode());
 
-        return new ErrorResponse(e.getSalesErrorCode().getCode(), e.getErrorMessage());
+        SalesErrorCode code = e.getSalesErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(PaymentException.class)
-    public ErrorResponse handlePaymentException(PaymentException e) {
+    public ResponseEntity<ErrorResponse> handlePaymentException(PaymentException e) {
         log.error("{} is occurred.", e.getPaymentErrorCode());
 
-        return new ErrorResponse(e.getPaymentErrorCode().getCode(), e.getErrorMessage());
+        PaymentErrorCode code = e.getPaymentErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(RentalException.class)
-    public ErrorResponse handleRentalException(RentalException e) {
+    public ResponseEntity<ErrorResponse> handleRentalException(RentalException e) {
         log.error("{} is occurred.", e.getRentalErrorCode());
 
-        return new ErrorResponse(e.getRentalErrorCode().getCode(), e.getErrorMessage());
+        RentalErrorCode code = e.getRentalErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(WishException.class)
-    public ErrorResponse handleWishException(WishException e) {
+    public ResponseEntity<ErrorResponse> handleWishException(WishException e) {
         log.error("{} is occurred.", e.getWishErrorCode());
 
-        return new ErrorResponse(e.getWishErrorCode().getCode(), e.getErrorMessage());
+        WishErrorCode code = e.getWishErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(CartException.class)
-    public ErrorResponse handleWishException(CartException e) {
+    public ResponseEntity<ErrorResponse> handleWishException(CartException e) {
         log.error("{} is occurred.", e.getCartErrorCode());
 
-        return new ErrorResponse(e.getCartErrorCode().getCode(), e.getErrorMessage());
+        CartErrorCode code = e.getCartErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     @ExceptionHandler(OrderException.class)
-    public ErrorResponse handleOrderException(OrderException e) {
+    public ResponseEntity<ErrorResponse> handleOrderException(OrderException e) {
         log.error("{} is occurred.", e.getOrderErrorCode());
 
-        return new ErrorResponse(e.getOrderErrorCode().getCode(), e.getErrorMessage());
+        OrderErrorCode code = e.getOrderErrorCode();
+
+        return ResponseEntity
+                .status(code.getHttpStatus())
+                .body(new ErrorResponse(code.getCode(), code.getMessage()));
     }
 
     // 유효성 검사 실패

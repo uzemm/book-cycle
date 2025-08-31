@@ -4,17 +4,12 @@ import com.uzem.book_cycle.admin.type.SalesErrorCode;
 import lombok.*;
 
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class SalesException extends RuntimeException {
 
-    private SalesErrorCode salesErrorCode;
-    private String errorMessage;
+    private final SalesErrorCode salesErrorCode;
 
     public SalesException(SalesErrorCode salesErrorCode) {
+        super(salesErrorCode.getMessage());
         this.salesErrorCode = salesErrorCode;
-        this.errorMessage = salesErrorCode.getMessage();
     }
 }

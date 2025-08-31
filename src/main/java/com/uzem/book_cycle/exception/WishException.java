@@ -7,15 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class WishException extends RuntimeException {
-    private WishErrorCode wishErrorCode;
-    private String errorMessage;
+    private final WishErrorCode wishErrorCode;
 
     public WishException(WishErrorCode wishErrorCode){
+        super(wishErrorCode.getMessage());
         this.wishErrorCode = wishErrorCode;
-        this.errorMessage = wishErrorCode.getMessage();
     }
 }

@@ -5,11 +5,10 @@ import lombok.*;
 
 @Getter
 public class BookException extends RuntimeException {
-    private BookErrorCode bookErrorCode;
-    private String errorMessage;
+    private final BookErrorCode bookErrorCode;
 
     public BookException(BookErrorCode bookErrorCode) {
+        super(bookErrorCode.getMessage());
         this.bookErrorCode = bookErrorCode;
-        this.errorMessage = bookErrorCode.getDescription();
     }
 }

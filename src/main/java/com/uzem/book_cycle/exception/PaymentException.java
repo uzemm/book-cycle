@@ -7,15 +7,11 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class PaymentException extends RuntimeException {
-    private PaymentErrorCode paymentErrorCode;
-    private String errorMessage;
+    private final PaymentErrorCode paymentErrorCode;
 
     public PaymentException(PaymentErrorCode paymentErrorCode){
+        super(paymentErrorCode.getMessage());
         this.paymentErrorCode = paymentErrorCode;
-        this.errorMessage = paymentErrorCode.getMessage();
     }
 }
