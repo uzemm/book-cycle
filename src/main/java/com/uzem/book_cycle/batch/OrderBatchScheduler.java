@@ -35,7 +35,8 @@ public class OrderBatchScheduler {
 
         for(Order order : orders){
             Member member = order.getMember();
-            orderService.cancelOrderWithRestoration(order, AUTO_EXPIRED);
+            orderService.cancelOrderWithRestorationInNewTx(order, AUTO_EXPIRED);
+
             log.info("만료 주문 취소 완료: orderId={}, memberId={}, rentalCnt={}",
                     order.getId(), member.getId(), member.getRentalCnt());
         }

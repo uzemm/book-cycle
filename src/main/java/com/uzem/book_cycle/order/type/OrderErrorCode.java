@@ -13,6 +13,7 @@ public enum OrderErrorCode implements ErrorCode {
     ORDER_STATUS_SHIPPED("배송 중인 도서는 취소할 수 없습니다.", HttpStatus.FORBIDDEN),
     ORDER_NOT_PAID("결제가 완료되지 않은 주문입니다.", HttpStatus.BAD_REQUEST),
     INVALID_ORDER_STATUS("이미 배송이 시작된 주문입니다.", HttpStatus.BAD_REQUEST),
+    ORDER_CANCEL_SYSTEM_ERROR("시스템 오류로 주문이 완료되지 않았습니다.", HttpStatus.BAD_REQUEST),
     ;
 
 
