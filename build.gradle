@@ -47,6 +47,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	//websocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	// redisson
+	implementation 'org.redisson:redisson:3.50.0'
+
 
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.h2database:h2'
@@ -70,7 +73,7 @@ tasks.named('test') {
 }
 
 // Querydsl Q Class 생성 위치
-def querydslDir = '$buildDir/generated/querydsl'
+def querydslDir = "$buildDir/generated/querydsl"
 // java source set 에 Querydsl Q Class 위치 추가
 sourceSets {
 	main {
