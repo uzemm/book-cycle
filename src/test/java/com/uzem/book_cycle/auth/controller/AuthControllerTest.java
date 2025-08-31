@@ -8,7 +8,7 @@ import com.uzem.book_cycle.auth.dto.SignUpResponseDTO;
 import com.uzem.book_cycle.external.email.DTO.EmailVerificationResponseDTO;
 import com.uzem.book_cycle.auth.service.AuthServiceImpl;
 import com.uzem.book_cycle.external.email.DTO.EmailVerificationRequestDTO;
-import com.uzem.book_cycle.auth.service.EmailService;
+import com.uzem.book_cycle.auth.service.EmailVerificationService;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.security.CustomUserDetailsService;
 import com.uzem.book_cycle.security.token.TokenDTO;
@@ -47,7 +47,7 @@ class AuthControllerTest {
     private MemberRepository repository;
 
     @MockitoBean
-    private EmailService emailService;
+    private EmailVerificationService emailService;
 
     @MockitoBean
     private SecurityFilterChain securityFilterChain;

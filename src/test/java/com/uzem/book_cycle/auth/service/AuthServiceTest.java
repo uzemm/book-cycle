@@ -57,7 +57,7 @@ class AuthServiceTest {
     private EmailVerificationRepository emailRepository;
 
     @Mock
-    private EmailService emailService;
+    private EmailVerificationService emailService;
 
     @Mock
     private PasswordEncoder passwordEncoder;

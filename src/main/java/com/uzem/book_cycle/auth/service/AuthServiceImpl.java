@@ -43,7 +43,7 @@ import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final MemberRepository memberRepository;
-    private final EmailService emailService;
+    private final EmailVerificationService emailService;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationRepository emailRepository;
     private final AuthenticationManager authenticationManager;
