@@ -1,24 +1,26 @@
-package com.uzem.book_cycle.book.entity;
+package com.uzem.book_cycle.reservation.entity;
 
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.time.LocalDate;
 
 import static com.uzem.book_cycle.admin.type.RentalStatus.PENDING_PAYMENT;
 
-
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
 @Entity
+@Table(
+        name = "reservation",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {
+                        "rental_book_id", "reservation_order"})
+        })
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 public class Reservation extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
