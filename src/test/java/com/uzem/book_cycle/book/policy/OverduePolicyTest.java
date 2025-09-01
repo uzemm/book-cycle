@@ -1,5 +1,6 @@
 package com.uzem.book_cycle.book.policy;
 
+import com.uzem.book_cycle.rental.policy.OverduePolicy;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;

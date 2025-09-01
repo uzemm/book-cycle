@@ -1,0 +1,155 @@
+package com.uzem.book_cycle.rental.entity;
+
+import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
+import com.uzem.book_cycle.admin.dto.rental.AdminRentalRequestDTO;
+import com.uzem.book_cycle.admin.dto.rental.UpdateAdminRentalRequestDTO;
+import com.uzem.book_cycle.admin.type.RentalStatus;
+import com.uzem.book_cycle.rental.dto.RentalPreviewDTO;
+import com.uzem.book_cycle.entity.BaseEntity;
+import com.uzem.book_cycle.exception.RentalException;
+import com.uzem.book_cycle.reservation.entity.Reservation;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.uzem.book_cycle.rental.type.RentalErrorCode.ALREADY_RENTED;
+import static com.uzem.book_cycle.admin.type.RentalStatus.*;
+
+
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
+@Entity
+public class RentalBook extends BaseEntity {
+    @Column(nullable = false)
+    private String title;
+
+    @Column(nullable = false)
+    private String author;
+
+    @Column(nullable = false)
+    private String publisher;
+
+    @Column(nullable = false)
+    private String isbn;
+
+    @Column(nullable = false)
+    private String description;
+
+    @Column(nullable = false)
+    private String image;
+
+    @Column(nullable = false)
+    private String pubdate;
+
+    @Column(nullable = false)
+    private String link;
+
+    @Column(nullable = false)
+    private Long price;
+
+    @Column(nullable = false)
+    private RentalStatus rentalStatus;
+
+    @Column(nullable = false)
+    private boolean isDeleted;
+
+    @Column(nullable = false)
+    private boolean isPublic;
+
+    @OneToMany(mappedBy = "rentalBook", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Reservation> reservations = new ArrayList<>(); // 양방향
+
+    public static RentalBook from(AdminRentalRequestDTO request) {
+        return RentalBook.builder()
+                .title(request.getTitle())
+                .author(request.getAuthor())
+                .publisher(request.getPublisher())
+                .isbn(request.getIsbn())
+                .description(request.getDescription())
+                .image(request.getImage())
+                .pubdate(request.getPubdate())
+                .link(request.getLink())
+                .price(500L)
+                .rentalStatus(AVAILABLE)
+                .isDeleted(false)
+                .isPublic(true)
+                .build();
+    }
+
+    // 대여도서 수정
+    public void updateRentalBook(UpdateAdminRentalRequestDTO update){
+        updateCommonBookFields(update);
+        this.price = update.getPrice();
+        this.rentalStatus = update.getRentalStatus();
+    }
+
+    private void updateCommonBookFields(UpdateBookRequestDTO update) {
+        this.title = update.getTitle();
+        this.author = update.getAuthor();
+        this.publisher = update.getPublisher();
+        this.isbn = update.getIsbn();
+        this.description = update.getDescription();
+        this.image = update.getImage();
+        this.pubdate = update.getPubdate();
+        this.link = update.getLink();
+    }
+
+    // 공개
+    public void updateIsPublic(){
+        this.isPublic = true;
+    }
+
+    // 소프트 딜리트
+    public void delete(){
+        this.isDeleted = true;
+    }
+
+    public RentalPreviewDTO toRentalPreviewDTO(){
+        return RentalPreviewDTO.builder()
+                .title(this.title)
+                .author(this.author)
+                .image(this.image)
+                .price(this.price)
+                .status(this.rentalStatus)
+                .build();
+    }
+
+    public RentalStatus rented() {
+        if(this.rentalStatus == RENTED){
+            throw new RentalException(ALREADY_RENTED);
+        }
+       return this.rentalStatus = RENTED;
+    }
+
+    // 대여 상태인지
+    public boolean isRented() {
+        return this.rentalStatus == RENTED;
+    }
+
+    public void updateAvailable(){
+        this.rentalStatus = AVAILABLE;
+    }
+
+    // 예약 차례가오면 결제 대기로 변경
+    public void updatePendingPayment(){
+        this.rentalStatus = PENDING_PAYMENT;
+    }
+
+    /** 도서에 예약 추가 및 연관관계 설정 (양방향 유지용). */
+    public void addReservation(Reservation reservation) {
+        reservations.add(reservation);
+        reservation.setRentalBook(this);
+    }
+
+    /** 도서-예약 간 연관관계 제거 (양방향 관계 정리용). */
+    public void removeReservation(Reservation reservation) {
+        reservations.remove(reservation);
+        reservation.setRentalBook(null);
+    }
+}

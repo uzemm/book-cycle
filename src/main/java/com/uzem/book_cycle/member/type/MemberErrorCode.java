@@ -30,6 +30,7 @@ public enum MemberErrorCode implements ErrorCode {
     MEMBER_HAS_ACTIVE_RENTALS("대여 중인 도서가 있으므로 탈퇴할 수 없습니다.", HttpStatus.BAD_REQUEST),
     MEMBER_HAS_ACTIVE_RESERVATIONS("예약 중인 도서가 있으므로 탈퇴할 수 없습니다.", HttpStatus.BAD_REQUEST),
     MEMBER_HAS_ACTIVE_DELIVERY("배송 중인 주문이 있으므로 탈퇴할 수 없습니다.", HttpStatus.BAD_REQUEST),
+    MEMBER_HAS_ACTIVE_ORDER("주문 중인 도서가 있으므로 탈퇴할 수 없습니다.", HttpStatus.BAD_REQUEST),
     MEMBER_AUTHORITY_NOT_FOUND("권한 정보가 없습니다.", HttpStatus.UNAUTHORIZED)
     ;
 

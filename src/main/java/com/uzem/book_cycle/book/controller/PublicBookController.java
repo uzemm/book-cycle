@@ -1,14 +1,14 @@
 package com.uzem.book_cycle.book.controller;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalResponseDTO;
-import com.uzem.book_cycle.admin.entity.SalesBook;
-import com.uzem.book_cycle.admin.dto.sales.SalesResponseDTO;
-import com.uzem.book_cycle.admin.service.AdminRentalService;
-import com.uzem.book_cycle.admin.service.SalesService;
-import com.uzem.book_cycle.book.dto.RentalPreviewDTO;
-import com.uzem.book_cycle.book.dto.SalesPreviewDTO;
-import com.uzem.book_cycle.exception.BookException;
+import com.uzem.book_cycle.sales.entity.SalesBook;
+import com.uzem.book_cycle.admin.dto.sales.AdminSalesResponseDTO;
+import com.uzem.book_cycle.admin.service.AdminRentalServiceImpl;
+import com.uzem.book_cycle.admin.service.AdminSalesServiceImpl;
+import com.uzem.book_cycle.rental.dto.RentalPreviewDTO;
+import com.uzem.book_cycle.sales.dto.SalesPreviewDTO;
+import com.uzem.book_cycle.exception.BookSearchException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -18,18 +18,18 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.uzem.book_cycle.naver.type.BookErrorCode.EMPTY_SEARCH_QUERY;
+import static com.uzem.book_cycle.external.booksearch.type.BookSearchErrorCode.EMPTY_SEARCH_QUERY;
 
 @Controller
 @RequiredArgsConstructor
 public class PublicBookController {
 
-    private final SalesService salesService;
-    private final AdminRentalService rentalService;
+    private final AdminSalesServiceImpl salesService;
+    private final AdminRentalServiceImpl rentalService;
 
     @GetMapping("/sales/{saleId}")
-    public ResponseEntity<SalesResponseDTO> salesDetail(@PathVariable Long saleId){
-        SalesResponseDTO response = salesService.getSalesBookDetail(saleId);
+    public ResponseEntity<AdminSalesResponseDTO> salesDetail(@PathVariable Long saleId){
+        AdminSalesResponseDTO response = salesService.getSalesBookDetail(saleId);
         return ResponseEntity.ok(response);
     }
 
@@ -43,7 +43,7 @@ public class PublicBookController {
     @ResponseBody
     public List<SalesPreviewDTO> searchSalesBooks(@RequestParam("keyword") String keyword) {
         if (!StringUtils.hasText(keyword)) {
-            throw new BookException(EMPTY_SEARCH_QUERY);
+            throw new BookSearchException(EMPTY_SEARCH_QUERY);
         }
         return salesService.searchSalesBook(keyword)
                 .stream()
@@ -55,7 +55,7 @@ public class PublicBookController {
     @ResponseBody
     public List<RentalPreviewDTO> searchRentalBooks(@RequestParam("keyword") String keyword) {
         if(!StringUtils.hasText(keyword)) {
-            throw new BookException(EMPTY_SEARCH_QUERY);
+            throw new BookSearchException(EMPTY_SEARCH_QUERY);
         }
         return rentalService.searchRentalBook(keyword).stream()
                 .map(RentalBook::toRentalPreviewDTO)

@@ -1,0 +1,19 @@
+package com.uzem.book_cycle.rental.dto;
+
+import com.uzem.book_cycle.admin.type.RentalStatus;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class RentalPreviewDTO {
+    private String title;
+    private String author;
+    private String image;
+    private Long price;
+    private RentalStatus status;
+}

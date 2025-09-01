@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.wish.repository;
 
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.wish.entity.Wish;
 import org.springframework.data.jpa.repository.JpaRepository;

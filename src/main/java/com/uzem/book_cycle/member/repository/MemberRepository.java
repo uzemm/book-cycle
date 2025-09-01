@@ -3,6 +3,7 @@ package com.uzem.book_cycle.member.repository;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.type.MemberStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.querydsl.QuerydslPredicateExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long>, QuerydslPredicateExecutor<Member> {
     Optional<Member> findByEmail(String email); //이메일로 회원 조회
     Optional<Member> findById(Long memberId); // id로 회원 조회
     Optional<Member> findByIdAndIsDeletedFalse(Long memberId); // id로 회원 조회

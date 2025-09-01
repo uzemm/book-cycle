@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.exception;
 
-import com.uzem.book_cycle.admin.type.SalesErrorCode;
+import com.uzem.book_cycle.sales.type.SalesErrorCode;
 import lombok.*;
 
 @Getter

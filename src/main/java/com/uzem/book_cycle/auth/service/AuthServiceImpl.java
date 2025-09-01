@@ -3,11 +3,10 @@ package com.uzem.book_cycle.auth.service;
 import com.uzem.book_cycle.auth.dto.LoginRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpRequestDTO;
 import com.uzem.book_cycle.auth.dto.SignUpResponseDTO;
-import com.uzem.book_cycle.auth.email.DTO.EmailResendResponseDTO;
-import com.uzem.book_cycle.auth.email.DTO.EmailVerificationResponseDTO;
-import com.uzem.book_cycle.auth.email.entity.EmailVerification;
-import com.uzem.book_cycle.auth.email.repository.EmailVerificationRepository;
-import com.uzem.book_cycle.auth.email.service.EmailService;
+import com.uzem.book_cycle.external.email.DTO.EmailResendResponseDTO;
+import com.uzem.book_cycle.external.email.DTO.EmailVerificationResponseDTO;
+import com.uzem.book_cycle.auth.entity.EmailVerification;
+import com.uzem.book_cycle.auth.repository.EmailVerificationRepository;
 import com.uzem.book_cycle.security.token.TokenDTO;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import com.uzem.book_cycle.exception.MemberException;
@@ -44,7 +43,7 @@ import static com.uzem.book_cycle.security.token.TokenErrorCode.*;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
     private final MemberRepository memberRepository;
-    private final EmailService emailService;
+    private final EmailVerificationService emailService;
     private final PasswordEncoder passwordEncoder;
     private final EmailVerificationRepository emailRepository;
     private final AuthenticationManager authenticationManager;

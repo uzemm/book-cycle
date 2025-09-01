@@ -1,9 +1,9 @@
 package com.uzem.book_cycle.cart.service;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.rental.entity.RentalBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
-import com.uzem.book_cycle.admin.repository.SalesRepository;
+import com.uzem.book_cycle.admin.repository.AdminSalesRepository;
 import com.uzem.book_cycle.cart.dto.CartRequestDTO;
 import com.uzem.book_cycle.cart.dto.CartResponseDTO;
 import com.uzem.book_cycle.cart.entity.Cart;
@@ -22,9 +22,9 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
-import static com.uzem.book_cycle.admin.type.RentalErrorCode.RENTAL_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.rental.type.RentalErrorCode.RENTAL_BOOK_NOT_FOUND;
 import static com.uzem.book_cycle.admin.type.RentalStatus.*;
-import static com.uzem.book_cycle.admin.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
+import static com.uzem.book_cycle.sales.type.SalesErrorCode.SALES_BOOK_NOT_FOUND;
 import static com.uzem.book_cycle.admin.type.SalesStatus.SOLD;
 import static com.uzem.book_cycle.cart.type.CartErrorCode.*;
 import static com.uzem.book_cycle.member.type.MemberErrorCode.MEMBER_NOT_FOUND;
@@ -36,7 +36,7 @@ import static com.uzem.book_cycle.order.type.ItemType.SALE;
 public class CartServiceImpl implements CartService {
     private final CartRepository cartRepository;
     private final AdminRentalRepository rentalRepository;
-    private final SalesRepository salesRepository;
+    private final AdminSalesRepository salesRepository;
     private final MemberRepository memberRepository;
 
     @Override

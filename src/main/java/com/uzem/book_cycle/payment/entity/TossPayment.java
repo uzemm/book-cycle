@@ -1,10 +1,10 @@
 package com.uzem.book_cycle.payment.entity;
 
 import com.uzem.book_cycle.order.entity.Order;
-import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
-import com.uzem.book_cycle.payment.type.PaymentPurpose;
-import com.uzem.book_cycle.payment.type.PaymentStatus;
-import com.uzem.book_cycle.payment.type.PaymentType;
+import com.uzem.book_cycle.external.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.external.payment.type.PaymentPurpose;
+import com.uzem.book_cycle.external.payment.type.PaymentStatus;
+import com.uzem.book_cycle.external.payment.type.PaymentType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -53,6 +53,7 @@ public class TossPayment{
     private OffsetDateTime approvedAt;
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL)
+    @Builder.Default
     private List<Cancel> cancels = new ArrayList<>();
 
     private PaymentPurpose paymentPurpose;

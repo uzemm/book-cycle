@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.member.entity;
 
-import com.uzem.book_cycle.book.entity.RentalHistory;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.exception.MemberException;
 import com.uzem.book_cycle.member.type.MemberStatus;
@@ -58,6 +58,7 @@ public class Member extends BaseEntity {
     private SocialType socialType;
 
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<RentalHistory> rentalHistories = new ArrayList<>();
 
     public void activateMember(){
@@ -118,5 +119,21 @@ public class Member extends BaseEntity {
         this.point = Math.max(0, this.point + usedPoint - rewardPoint);
         // 대여 횟수 복원
         this.rentalCnt = Math.max(0, this.rentalCnt - rentalCnt);
+    }
+
+    public void changeStatus(MemberStatus status) {
+        this.status = status;
+    }
+
+    public void changePoint(long amount) {
+        long newPoint = this.point + amount;
+        if(newPoint < 0){
+            throw new MemberException(INSUFFICIENT_POINTS);
+        }
+        this.point += point;
+    }
+
+    public void resetPassword(String tempPassword){
+        this.password = tempPassword;
     }
 }

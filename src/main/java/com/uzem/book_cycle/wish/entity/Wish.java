@@ -1,7 +1,7 @@
 package com.uzem.book_cycle.wish.entity;
 
 
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.member.entity.Member;
 import jakarta.persistence.Entity;

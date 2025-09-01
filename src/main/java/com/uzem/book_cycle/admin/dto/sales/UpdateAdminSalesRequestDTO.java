@@ -1,0 +1,21 @@
+package com.uzem.book_cycle.admin.dto.sales;
+
+import com.uzem.book_cycle.admin.dto.UpdateBookRequestDTO;
+import com.uzem.book_cycle.admin.type.BookQuality;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
+@Getter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UpdateAdminSalesRequestDTO extends UpdateBookRequestDTO {
+    @NotNull
+    private Long price;
+    @NotNull
+    private BookQuality bookQuality;
+
+}

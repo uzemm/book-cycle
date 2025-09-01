@@ -1,23 +1,21 @@
 package com.uzem.book_cycle.order.entity;
 
 import com.uzem.book_cycle.entity.BaseEntity;
+import com.uzem.book_cycle.exception.OrderException;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.order.dto.OrderRequestDTO;
-import com.uzem.book_cycle.order.type.OrderStatus;
-import com.uzem.book_cycle.payment.type.PaymentMethod;
-import com.uzem.book_cycle.order.type.ShippingStatus;
+import com.uzem.book_cycle.order.type.*;
+import com.uzem.book_cycle.external.payment.type.PaymentMethod;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.apache.commons.lang3.RandomUtils;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
+import static com.uzem.book_cycle.order.type.OrderErrorCode.INVALID_ORDER_STATUS;
 import static com.uzem.book_cycle.order.type.OrderStatus.*;
+import static com.uzem.book_cycle.order.type.ShippingStatus.SHIPPED;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -81,6 +79,11 @@ public class Order extends BaseEntity {
     @Setter
     private String orderName;
 
+    @Enumerated(EnumType.STRING)
+    private CancelReason cancelReason;
+
+    private String trackingNumber;
+
     public void addOrderItem(OrderItem orderItem) {
         if(this.orderItems == null) {
             this.orderItems = new ArrayList<>();
@@ -89,9 +92,20 @@ public class Order extends BaseEntity {
         orderItem.setOrder(this);
     }
 
+    @PrePersist
+    public void generateIds(){
+        if(this.orderNumber == null) {
+            this.orderNumber = OrderNumberGenerator.createOrderNumber();
+        }
+        if(this.tossOrderId == null){
+            this.tossOrderId = "TOSS" + this.orderNumber;
+        }
+    }
+
     public static Order from(OrderRequestDTO request,
                              List<OrderItem> orderItems, Member member) {
-        Order order = Order.builder()
+
+        return Order.builder()
                 .member(member)
                 .receiverZipcode(request.getReceiverZipcode())
                 .receiverAddress(request.getReceiverAddress())
@@ -99,16 +113,12 @@ public class Order extends BaseEntity {
                 .receiverName(request.getReceiverName())
                 .deliveryMessage(request.getDeliveryMessage())
                 .usedPoint(request.getUsedPoint() != null ? request.getUsedPoint() : 0)
-                .orderNumber(createOrderNumber())
                 .orderStatus(PAID_READY)
                 .paymentMethod(request.getPaymentMethod())
                 .rewardPoint(100L)
                 .shippingFee(3500L)
-                .shippingStatus(ShippingStatus.SHIPPED)
-                .tossOrderId(generateTossOrderId())
+                .shippingStatus(SHIPPED)
                 .build();
-
-        return order;
     }
 
     // 사용한 포인트
@@ -128,16 +138,33 @@ public class Order extends BaseEntity {
         this.orderStatus = COMPLETED;
     }
 
-    public static String createOrderNumber() {
-        return "BC" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-                + RandomUtils.nextInt(100, 999);
+    public void cancelRequestOrder() {
+        this.orderStatus = CANCEL_REQUESTED;
     }
 
-    private static String generateTossOrderId() {
-        return UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
-
-    public void cancelOrder() {
+    public void cancelOrder(CancelReason cancelReason) {
         this.orderStatus = CANCELED;
+        this.cancelReason = cancelReason;
+    }
+
+    public void cancelPending(){
+        this.orderStatus = CANCEL_PENDING;
+    }
+
+    // 배송 시작 (READY → SHIPPED)
+    public void shipOrder(String trackingNumber) {
+        if(this.shippingStatus != ShippingStatus.PREPARING) {
+            throw new OrderException(INVALID_ORDER_STATUS);
+        }
+        this.trackingNumber = trackingNumber;
+        this.shippingStatus = SHIPPED;
+    }
+
+    // 운송장 번호 수정 (SHIPPED까지만 허용)
+    public void updateTrackingNumber(String trackingNumber) {
+        if (this.shippingStatus == ShippingStatus.DELIVERED) {
+            throw new OrderException(OrderErrorCode.INVALID_ORDER_STATUS);
+        }
+        this.trackingNumber = trackingNumber;
     }
 }

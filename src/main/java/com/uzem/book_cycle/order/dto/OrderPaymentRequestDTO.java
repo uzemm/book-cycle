@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.order.dto;
 
-import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.external.payment.dto.PaymentRequestDTO;
 import jakarta.validation.Valid;
 import lombok.Getter;
 

@@ -1,6 +1,6 @@
 package com.uzem.book_cycle.order.dto;
 
-import com.uzem.book_cycle.order.entity.Order;
+import com.uzem.book_cycle.rental.dto.RentalHistoryDTO;
 import com.uzem.book_cycle.order.entity.OrderItem;
 import com.uzem.book_cycle.order.type.ItemType;
 import lombok.AllArgsConstructor;
@@ -19,13 +19,26 @@ public class OrderItemResponseDTO {
     private Long itemPrice;
     private String title;
 
+    // 대여 도서일 경우 RentalHistory 정보 포함
+    private RentalHistoryDTO rentalHistory;
+
     public static OrderItemResponseDTO from(OrderItem item) {
-        return OrderItemResponseDTO.builder()
-                .bookId(item.getId())
-                .itemType(item.getItemType())
-                .itemPrice(item.getItemPrice())
-                .title(item.getTitle())
-                .build();
+        if(item.getItemType() == ItemType.SALE) {
+            return OrderItemResponseDTO.builder()
+                    .bookId(item.getSalesBook().getId())
+                    .itemType(item.getItemType())
+                    .itemPrice(item.getItemPrice())
+                    .title(item.getSalesBook().getTitle())
+                    .build();
+        } else {
+            return OrderItemResponseDTO.builder()
+                    .bookId(item.getRentalBook().getId())
+                    .itemType(item.getItemType())
+                    .itemPrice(item.getItemPrice())
+                    .title(item.getRentalBook().getTitle())
+                    .rentalHistory(RentalHistoryDTO.from(item.getRentalHistory()))
+                    .build();
+        }
     }
 
 }

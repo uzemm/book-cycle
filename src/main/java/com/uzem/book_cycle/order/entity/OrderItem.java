@@ -1,7 +1,8 @@
 package com.uzem.book_cycle.order.entity;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
-import com.uzem.book_cycle.admin.entity.SalesBook;
+import com.uzem.book_cycle.rental.entity.RentalBook;
+import com.uzem.book_cycle.sales.entity.SalesBook;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
 import com.uzem.book_cycle.entity.BaseEntity;
 import com.uzem.book_cycle.order.type.ItemType;
 import jakarta.persistence.*;
@@ -36,6 +37,10 @@ public class OrderItem extends BaseEntity {
     private Long itemPrice;
 
     private String title;
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "rental_history_id")
+    private RentalHistory rentalHistory;
 
     public void setOrder (Order order) {
         this.order = order;

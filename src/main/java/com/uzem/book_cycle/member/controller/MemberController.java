@@ -1,12 +1,15 @@
 package com.uzem.book_cycle.member.controller;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
+import com.uzem.book_cycle.rental.dto.*;
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.admin.repository.AdminRentalRepository;
-import com.uzem.book_cycle.book.dto.*;
-import com.uzem.book_cycle.book.service.RentalService;
+import com.uzem.book_cycle.rental.service.RentalService;
 import com.uzem.book_cycle.exception.RentalException;
 import com.uzem.book_cycle.member.dto.*;
 import com.uzem.book_cycle.member.service.MemberService;
+import com.uzem.book_cycle.reservation.dto.ReservationRequestDTO;
+import com.uzem.book_cycle.reservation.dto.ReservationResponseDTO;
+import com.uzem.book_cycle.reservation.service.ReservationService;
 import com.uzem.book_cycle.security.CustomUserDetails;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,7 +25,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import static com.uzem.book_cycle.admin.type.RentalErrorCode.*;
+import static com.uzem.book_cycle.rental.type.RentalErrorCode.*;
 
 @Slf4j
 @RestController
@@ -34,6 +37,7 @@ public class MemberController {
     private final MemberService memberService;
     private final TokenProvider tokenProvider;
     private final RentalService rentalService;
+    private final ReservationService reservationService;
     private final AdminRentalRepository adminRentalRepository;
 
     @Operation(summary = "내정보 조회")
@@ -115,7 +119,7 @@ public class MemberController {
     public ResponseEntity<List<ReservationResponseDTO>> getMyReservations(
             @AuthenticationPrincipal CustomUserDetails userDetails){
         List<ReservationResponseDTO> myReservations =
-                rentalService.getMyReservations(userDetails.getId());
+                reservationService.getMyReservations(userDetails.getId());
         return ResponseEntity.ok(myReservations);
     }
 
@@ -127,7 +131,7 @@ public class MemberController {
             @AuthenticationPrincipal CustomUserDetails userDetails){
         RentalBook rentalBook = adminRentalRepository.findById(requestDTO.getRentalBookId())
                 .orElseThrow(() -> new RentalException(RENTAL_BOOK_NOT_FOUND));
-                rentalService.cancelMyReservation(rentalBook, userDetails.getId());
+        reservationService.cancelMyReservation(rentalBook, userDetails.getId());
 
         return ResponseEntity.ok().body("예약 취소 완료");
     }

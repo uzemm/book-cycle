@@ -1,13 +1,14 @@
 package com.uzem.book_cycle.book.service;
 
-import com.uzem.book_cycle.admin.entity.RentalBook;
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.policy.OverduePolicy;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.rental.entity.RentalBook;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
+import com.uzem.book_cycle.rental.policy.OverduePolicy;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.event.OverdueFeeEvent;
 import com.uzem.book_cycle.event.RentalOverdueEvent;
 import com.uzem.book_cycle.notification.type.NotificationType;
+import com.uzem.book_cycle.rental.service.OverdueServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
