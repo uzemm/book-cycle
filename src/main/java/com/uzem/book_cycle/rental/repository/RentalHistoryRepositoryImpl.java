@@ -5,10 +5,10 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.uzem.book_cycle.admin.dto.rental.AdminRentalStatusDTO;
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.entity.QRentalBook;
-import com.uzem.book_cycle.book.entity.QRentalHistory;
 import com.uzem.book_cycle.member.entity.QMember;
 import com.uzem.book_cycle.order.entity.QOrder;
+import com.uzem.book_cycle.rental.entity.QRentalBook;
+import com.uzem.book_cycle.rental.entity.QRentalHistory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,8 +28,8 @@ public class RentalHistoryRepositoryImpl implements RentalHistoryRepositoryCusto
                                                         LocalDate endDate,
                                                         Pageable pageable) {
         QRentalHistory rh = QRentalHistory.rentalHistory;
-        QMember m = QMember.member;
         QRentalBook rb = QRentalBook.rentalBook;
+        QMember m = QMember.member;
         QOrder o = QOrder.order;
 
         BooleanBuilder builder = new BooleanBuilder();

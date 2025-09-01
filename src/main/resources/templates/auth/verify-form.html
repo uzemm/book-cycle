@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이메일 인증</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootswatch@5.3.3/dist/minty/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="d-flex justify-content-center align-items-center vh-100">
+    <div class="card p-4 shadow-lg" style="width: 400px;">
+        <h2 class="text-center fw-bold mb-3">이메일 인증</h2>
+        <p class="text-center">이메일로 전송된 인증 코드를 입력하세요.</p>
+
+        <form id="verifyForm">
+            <div class="mb-3">
+                <label for="email" class="form-label">이메일</label>
+                <input type="email" id="email" class="form-control" required readonly>
+                <p id="email-error" class="field-error text-danger" style="display: none;"></p>
+            </div>
+
+            <div class="mb-3">
+                <label for="verificationCode" class="form-label">인증 코드</label>
+                <input type="text" id="verificationCode" class="form-control" required>
+                <p id="verificationCode-error" class="field-error text-danger" style="display: none;"></p>
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary">인증하기</button>
+            </div>
+        </form>
+        <div id="success-message" class="alert alert-success mt-3 text-center" style="display: none;"></div>
+    </div>
+</div>
+<script src="/js/auth/signup-verify.js"></script>
+</body>
+</html>

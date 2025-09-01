@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="https://static.toss.im/icons/png/4x/icon-toss-logo.png" />
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- SDK 추가 -->
+    <script src="https://js.tosspayments.com/v2/standard"></script>
+</head>
+<body class="p-5">
+<div class="wrapper">
+    <div class="box_section" style="padding: 40px 30px 50px 30px; margin-top: 30px; margin-bottom: 50px">
+        <h1>일반 결제</h1>
+        <!-- 결제하기 버튼 -->
+        <button class="button" style="margin-top: 30px" onclick="requestPayment()">결제하기</button>
+    </div>
+</div>
+
+<script>
+    // ------  SDK 초기화 ------
+    // TODO: clientKey는 개발자센터의 API 개별 연동 키 > 결제창 연동에 사용하려할 MID > 클라이언트 키로 바꾸세요.
+    // TODO: server.js 의 secretKey 또한 결제위젯 연동 키가 아닌 API 개별 연동 키의 시크릿 키로 변경해야 합니다.
+
+    const clientKey = "test_ck_ma60RZblrqJ4yW6YyZDW8wzYWBn1";
+    const tossPayments = TossPayments(clientKey);
+    const payment = tossPayments.payment({customerKey: TossPayments.ANONYMOUS})
+
+    async function requestPayment() {
+        // 결제를 요청하기 전에 orderId, amount를 서버에 저장하세요.
+        // 결제 과정에서 악의적으로 결제 금액이 바뀌는 것을 확인하는 용도입니다.
+
+        // ✅ 먼저 서버에 저장
+        await fetch('/payment/saveAmount', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                amount: amountValue
+            })
+        });
+        // ✅ 저장 후 결제 요청
+        await payment.requestPayment({
+            method: "CARD", // 카드 결제
+            amount: {
+                currency: "KRW",
+                value: amountValue,
+            },
+            orderId: orderId,
+            orderName: 'BookCycle 책 1권',
+            successUrl: window.location.origin + '/payment/success.html',
+            failUrl: window.location.origin + '/payment/fail.html',
+            customerEmail: "customer123@gmail.com",
+            customerName: "김토스",
+            // 카드 결제에 필요한 정보
+            card: {
+                useEscrow: false,
+                flowMode: "DEFAULT", // 통합결제창 여는 옵션
+                useCardPoint: false,
+                useAppCardOnly: false,
+            },
+    });
+
+    function generateRandomString() {
+        return window.btoa(Math.random()).slice(0, 20);
+    }}
+</script>
+</body>
+</html>

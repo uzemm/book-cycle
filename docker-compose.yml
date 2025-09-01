@@ -1,7 +1,7 @@
 version: "3.8"
 services:
   app:
-    image: w926450@gmail.com/book-cycle:latest
+    image: uzemm/book-cycle:latest
     container_name: book-cycle-app
     ports:
       - "8080:8080"

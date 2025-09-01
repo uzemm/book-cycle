@@ -1,0 +1,38 @@
+[33mca67e86[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m HEAD@{0}: commit: chore: restore application.yml
+[33m4af46d7[m HEAD@{1}: checkout: moving from feature/auth-signup to master
+[33m4a20d66[m[33m ([m[1;31morigin/feature/auth-signup[m[33m, [m[1;32mfeature/auth-signup[m[33m)[m HEAD@{2}: commit: chore: update build.gradle from master
+[33m5296e84[m HEAD@{3}: checkout: moving from master to feature/auth-signup
+[33m4af46d7[m HEAD@{4}: checkout: moving from feature/auth-signup to master
+[33m5296e84[m HEAD@{5}: checkout: moving from master to feature/auth-signup
+[33m4af46d7[m HEAD@{6}: commit (amend): chore: .gitignore 업데이트
+[33m720a34a[m HEAD@{7}: commit (amend): chore: .gitignore 업데이트
+[33ma51db2b[m HEAD@{8}: commit (amend): chore: .gitignore 업데이트
+[33m2e874f8[m HEAD@{9}: commit: chore: .gitignore 업데이트
+[33m7e7aba3[m HEAD@{10}: checkout: moving from feature/auth-signup to master
+[33m5296e84[m HEAD@{11}: checkout: moving from master to feature/auth-signup
+[33m7e7aba3[m HEAD@{12}: commit: chore: application.yml Git에서 제거
+[33m16ae2f3[m HEAD@{13}: checkout: moving from feature/auth-signup to master
+[33m5296e84[m HEAD@{14}: checkout: moving from master to feature/auth-signup
+[33m16ae2f3[m HEAD@{15}: reset: moving to origin/master
+[33m16ae2f3[m HEAD@{16}: reset: moving to origin/master
+[33m16ae2f3[m HEAD@{17}: checkout: moving from feature/auth-signup to master
+[33m5296e84[m HEAD@{18}: reset: moving to HEAD
+[33m5296e84[m HEAD@{19}: reset: moving to HEAD
+[33m5296e84[m HEAD@{20}: reset: moving to HEAD
+[33m5296e84[m HEAD@{21}: checkout: moving from master to feature/auth-signup
+[33m16ae2f3[m HEAD@{22}: checkout: moving from master to master
+[33m16ae2f3[m HEAD@{23}: commit: chore: Config 추가
+[33m0e84811[m HEAD@{24}: checkout: moving from feature/auth-signup to master
+[33m5296e84[m HEAD@{25}: checkout: moving from master to feature/auth-signup
+[33m0e84811[m HEAD@{26}: checkout: moving from master to master
+[33m0e84811[m HEAD@{27}: checkout: moving from feature/auth-signup to master
+[33m5296e84[m HEAD@{28}: commit: test: 회원가입 및 이메일 인증 테스트 추가
+[33mb89d682[m HEAD@{29}: commit: feat: 이메일 인증 및 전송 기능 구현
+[33m34d53e0[m HEAD@{30}: commit: feat: Member 엔티티 및 회원가입 기능 추가
+[33mece9f09[m[33m ([m[1;31morigin/auth[m[33m)[m HEAD@{31}: checkout: moving from master to feature/auth-signup
+[33m0e84811[m HEAD@{32}: checkout: moving from feature/auth-signup to master
+[33mece9f09[m[33m ([m[1;31morigin/auth[m[33m)[m HEAD@{33}: checkout: moving from master to feature/auth-signup
+[33m0e84811[m HEAD@{34}: commit: chore: 프로젝트 초기 설정
+[33mece9f09[m[33m ([m[1;31morigin/auth[m[33m)[m HEAD@{35}: checkout: moving from feature/auth-signup to master
+[33mece9f09[m[33m ([m[1;31morigin/auth[m[33m)[m HEAD@{36}: checkout: moving from master to feature/auth-signup
+[33mece9f09[m[33m ([m[1;31morigin/auth[m[33m)[m HEAD@{37}: commit (initial): Initial commit

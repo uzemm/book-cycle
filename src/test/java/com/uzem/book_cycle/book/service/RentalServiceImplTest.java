@@ -1,20 +1,24 @@
 package com.uzem.book_cycle.book.service;
 
-import com.uzem.book_cycle.book.entity.RentalBook;
+import com.uzem.book_cycle.rental.dto.GroupReturnResponseDTO;
+import com.uzem.book_cycle.rental.dto.OverdueListResponseDTO;
+import com.uzem.book_cycle.rental.dto.RentalHistoryListResponseDTO;
+import com.uzem.book_cycle.rental.dto.RentalHistoryResponseDTO;
+import com.uzem.book_cycle.rental.entity.RentalBook;
 import com.uzem.book_cycle.admin.type.RentalStatus;
-import com.uzem.book_cycle.book.dto.*;
-import com.uzem.book_cycle.book.entity.RentalHistory;
-import com.uzem.book_cycle.book.entity.Reservation;
-import com.uzem.book_cycle.book.repository.RentalHistoryRepository;
-import com.uzem.book_cycle.book.repository.ReservationRepository;
-import com.uzem.book_cycle.event.ReservationFirstEvent;
+import com.uzem.book_cycle.rental.entity.RentalHistory;
+import com.uzem.book_cycle.rental.service.RentalServiceImpl;
+import com.uzem.book_cycle.reservation.entity.Reservation;
+import com.uzem.book_cycle.rental.repository.RentalHistoryRepository;
+import com.uzem.book_cycle.reservation.repository.ReservationRepository;
 import com.uzem.book_cycle.member.entity.Member;
 import com.uzem.book_cycle.member.repository.MemberRepository;
 import com.uzem.book_cycle.order.entity.Order;
-import com.uzem.book_cycle.payment.dto.PaymentRequestDTO;
-import com.uzem.book_cycle.payment.dto.PaymentResponseDTO;
-import com.uzem.book_cycle.payment.service.PaymentService;
-import com.uzem.book_cycle.payment.type.PaymentPurpose;
+import com.uzem.book_cycle.external.payment.dto.PaymentRequestDTO;
+import com.uzem.book_cycle.external.payment.dto.PaymentResponseDTO;
+import com.uzem.book_cycle.external.payment.service.PaymentService;
+import com.uzem.book_cycle.external.payment.type.PaymentPurpose;
+import com.uzem.book_cycle.reservation.service.ReservationServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,8 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
 class RentalServiceImplTest {
@@ -57,6 +60,9 @@ class RentalServiceImplTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private ReservationServiceImpl reservationService;
+
     @InjectMocks
     private RentalServiceImpl rentalService;
 
@@ -74,7 +80,7 @@ class RentalServiceImplTest {
         ArgumentCaptor<RentalHistory> captor = ArgumentCaptor.forClass(RentalHistory.class);
 
         //when
-        rentalService.createRentalHistory(rentalBook, member, order, LocalDate.now());
+        rentalService.createRentalHistory(rentalBook.getId(), member.getId(), order.getId(), LocalDate.now());
 
         //then
         verify(rentalHistoryRepository, times(1))
@@ -85,71 +91,6 @@ class RentalServiceImplTest {
         assertEquals(rentalBook, captor.getValue().getRentalBook());
     }
 
-    @Test
-    @DisplayName("결제대기기한 만료 시 취소처리 배치 성공")
-    void cancelExpiredPendingReservation_success(){
-        //given
-        RentalBook rentalBook = RentalBook.builder()
-                .rentalStatus(PENDING_PAYMENT)
-                .build();
-        Reservation reservation = Reservation.builder()
-                .rentalBook(rentalBook)
-                .paymentDeadline(LocalDate.now().minusDays(1))
-                .isActive(true)
-                .build();
-
-        List<Reservation> reservationList = List.of(reservation);
-        given(reservationRepository .findAllByRentalStatusAndPaymentDeadlineBefore(PENDING_PAYMENT, LocalDate.now()))
-                .willReturn(reservationList);
-        //when
-        rentalService.updateCancelPendingPayment(reservationList);
-
-        //then
-        assertThat(rentalBook.getRentalStatus()).isEqualTo(AVAILABLE);
-        assertThat(reservation.isActive()).isEqualTo(false);
-        assertThat(reservation.getPaymentDeadline()).isNull();
-
-    }
-
-    @Test
-    @DisplayName("결제대기기한 만료 시 취소처리 배치 성공 - 예약자있음 ")
-    void cancelExpiredPendingReservations_andReorderReservation(){
-        //given
-        RentalBook rentalBook = RentalBook.builder()
-                .rentalStatus(PENDING_PAYMENT)
-                .reservations(new ArrayList<>())
-                .build();
-        Reservation reservation = Reservation.builder()
-                .id(1L)
-                .paymentDeadline(LocalDate.now().minusDays(1))
-                .reservationOrder(1)
-                .isActive(true)
-                .build();
-        Reservation reservation2 = Reservation.builder()
-                .id(2L)
-                .reservationOrder(2)
-                .paymentDeadline(null)
-                .isActive(true)
-                .build();
-
-        rentalBook.addReservation(reservation);
-        rentalBook.addReservation(reservation2);
-
-        List<Reservation> reservationList = List.of(reservation);
-        given(reservationRepository .findAllByRentalStatusAndPaymentDeadlineBefore(PENDING_PAYMENT, LocalDate.now()))
-                .willReturn(reservationList);
-        //when
-        rentalService.updateCancelPendingPayment(reservationList);
-
-        //then
-        assertThat(rentalBook.getRentalStatus()).isEqualTo(PENDING_PAYMENT);
-        assertThat(reservation.isActive()).isEqualTo(false);
-        assertThat(reservation2.getReservationOrder()).isEqualTo(1);
-        assertThat(reservation2.getPaymentDeadline()).isNotNull();
-
-        ArgumentCaptor<ReservationFirstEvent> captor = ArgumentCaptor.forClass(ReservationFirstEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-    }
 
     @Test
     @DisplayName("반납처리 성공")
@@ -189,6 +130,8 @@ class RentalServiceImplTest {
         assertThat(rentalBook.getRentalStatus()).isEqualTo(AVAILABLE);
         assertThat(member.getRentalCnt()).isEqualTo(0);
         assertThat(groupReturnResponseDTO).isNotNull();
+
+        verify(reservationService).notifyNextReservation(List.of(rentalHistory));
     }
 
     @Test
@@ -242,10 +185,11 @@ class RentalServiceImplTest {
         assertThat(member.getRentalCnt()).isEqualTo(0);
 
         verify(paymentService, times(1)).processOverduePayment(any(PaymentRequestDTO.class));
+        verify(reservationService).notifyNextReservation(rentalHistories);
     }
 
     private static RentalHistory getRentalHistory(Order order, RentalBook rentalBook, Member member) {
-        RentalHistory rentalHistory = RentalHistory.builder()
+        return RentalHistory.builder()
                 .rentalDate(LocalDate.now().minusDays(5))
                 .returnDate(LocalDate.now().plusDays(14))
                 .rentalStatus(RentalStatus.OVERDUE)
@@ -254,7 +198,6 @@ class RentalServiceImplTest {
                 .order(order)
                 .overdueFee(1000L)
                 .build();
-        return rentalHistory;
     }
 
     @Test
@@ -290,6 +233,12 @@ class RentalServiceImplTest {
         given(reservationRepository.findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(rentalBook, PENDING_PAYMENT))
                 .willReturn(Optional.of(reservation));
 
+        LocalDate deadline = LocalDate.now().plusDays(1);
+        rentalBook.getReservations().stream()
+                .filter(r -> r.isActive() && r.getReservationOrder() == 1)
+                .findFirst()
+                .ifPresent(r -> r.updatePaymentDeadline(deadline));
+
         //when
         GroupReturnResponseDTO groupReturnResponseDTO = rentalService.returnRental(
                 rentalHistories.get(0).getOrder().getId(), member.getId(), paymentRequestDTO);
@@ -309,8 +258,7 @@ class RentalServiceImplTest {
         verify(paymentService, times(1)).processOverduePayment(
                 any(PaymentRequestDTO.class));
 
-        ArgumentCaptor<ReservationFirstEvent> captor = ArgumentCaptor.forClass(ReservationFirstEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
+        verify(reservationService).notifyNextReservation(rentalHistories);
     }
 
     @Test
@@ -400,116 +348,7 @@ class RentalServiceImplTest {
         assertThat(myRentalHistories.get(0).getRentalHistoryList().get(0).getPayment()).isNotNull();
     }
 
-    @Test
-    @DisplayName("예약하기 성공")
-    void createReservation_success(){
-        //given
-        Member member = createMember();
-        RentalBook rentalBook = RentalBook.builder()
-                .id(1L)
-                .title("대여용 도서")
-                .price(1000L)
-                .reservations(new ArrayList<>())
-                .rentalStatus(RENTED)
-                .build();
 
-        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
-
-        //when
-        ReservationResponseDTO reservation = rentalService.createReservation(rentalBook, member.getId());
-
-        //then
-        assertThat(reservation).isNotNull();
-        assertThat(reservation.getReservationOrder()).isEqualTo(1);
-        assertThat(reservation.isActive()).isEqualTo(true);
-        assertThat(reservation.getPaymentDeadline()).isNull();
-    }
-
-    @Test
-    @DisplayName("예약하기 성공 - 순번 2번째")
-    void createReservation_whenSecond_thenSuccess(){
-        //given
-        Member member = createMember();
-        Member member2 = Member.builder()
-                .id(2L)
-                .rentalCnt(1)
-                .build();
-        Reservation reservation1 = Reservation.builder()
-                .id(1L)
-                .member(member)
-                .reservationOrder(1)
-                .paymentDeadline(null)
-                .isActive(true)
-                .build();
-        RentalBook rentalBook = RentalBook.builder()
-                .id(1L)
-                .title("대여용 도서")
-                .price(1000L)
-                .reservations(new ArrayList<>())
-                .rentalStatus(RENTED)
-                .build();
-        rentalBook.addReservation(reservation1);
-        given(memberRepository.findById(1L)).willReturn(Optional.of(member));
-        given(memberRepository.findById(2L)).willReturn(Optional.of(member2));
-        given(reservationRepository.existsByRentalBookAndMemberAndIsActiveTrue(rentalBook, member)).willReturn(true);
-
-        //when
-        ReservationResponseDTO result = rentalService.createReservation(rentalBook, member2.getId());
-
-        //then
-        assertThat(result.getReservationOrder()).isEqualTo(2);
-        assertThat(rentalBook.getReservations().size()).isEqualTo(2);
-        assertThat(rentalBook.getReservations().get(0).getReservationOrder()).isEqualTo(1);
-    }
-
-    @Test
-    @DisplayName("예약 취소 - 순번 1 예약자 취소")
-    void cancelReservation_andReorderReservation(){
-        //given
-        Member member = createMember();
-        Member member2 = Member.builder()
-                .id(2L)
-                .rentalCnt(1)
-                .build();
-        Reservation reservation1 = Reservation.builder()
-                .id(1L)
-                .member(member)
-                .reservationOrder(1)
-                .paymentDeadline(null)
-                .isActive(true)
-                .build();
-        Reservation reservation2 = Reservation.builder()
-                .id(2L)
-                .member(member2)
-                .reservationOrder(2)
-                .paymentDeadline(null)
-                .isActive(true)
-                .build();
-        RentalBook rentalBook = RentalBook.builder()
-                .id(1L)
-                .title("대여용 도서")
-                .price(1000L)
-                .reservations(new ArrayList<>())
-                .rentalStatus(RENTED)
-                .build();
-        rentalBook.addReservation(reservation1);
-        rentalBook.addReservation(reservation2);
-        given(reservationRepository.findByRentalBookAndMemberIdAndIsActiveTrue(rentalBook, member.getId()))
-                .willReturn(Optional.of(reservation1));
-        given(reservationRepository.findFirstByRentalBookAndRentalBook_RentalStatusAndIsActiveTrueOrderByReservationOrderAsc(rentalBook, PENDING_PAYMENT))
-                .willReturn(Optional.of(reservation2));
-
-        //when
-        rentalService.cancelMyReservation(rentalBook, member.getId());
-
-        //then
-        assertThat(reservation2.getReservationOrder()).isEqualTo(1);
-        assertThat(reservation1.getReservationOrder()).isEqualTo(0);
-        assertThat(reservation1.isActive()).isEqualTo(false);
-
-        ArgumentCaptor<ReservationFirstEvent> captor = ArgumentCaptor.forClass(ReservationFirstEvent.class);
-        verify(eventPublisher).publishEvent(captor.capture());
-    }
 
     private static RentalHistory getRentalHistoryRented(Order order, RentalBook rentalBook, Member member) {
         return RentalHistory.builder()
