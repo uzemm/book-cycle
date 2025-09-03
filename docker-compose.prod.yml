@@ -1,0 +1,38 @@
+services:
+  app:
+    image: uzemm/book-cycle:latest
+    container_name: book-cycle-app
+    ports:
+      - "8080:8080"  # EC2에서는 보통 8080 그대로 씀
+    environment:
+      SPRING_PROFILES_ACTIVE: docker   # 🔥 여기서 docker 프로파일 적용
+    depends_on:
+      - db
+      - redis
+    restart: always
+    networks:
+      - bookcycle-network
+
+  db:
+    ports:
+      - "3307:3306"   # 운영에서는 그냥 3306 열어도 됨
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+    restart: always
+    networks:
+      - bookcycle-network
+
+  redis:
+    image: redis:7
+    container_name: book-cycle-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    restart: always
+    networks:
+      - bookcycle-network
+
+networks:
+  bookcycle-network:
+    driver: bridge

@@ -1,27 +1,34 @@
-version: "3.8"
+version: "3.9"
+
 services:
   app:
     image: uzemm/book-cycle:latest
     container_name: book-cycle-app
-    ports:
-      - "8080:8080"
-    env_file:
-      - .env
     depends_on:
       - db
       - redis
+    networks:
+      - bookcycle-network
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
 
   db:
     image: mysql:8.0
-    container_name: book-cycle-db
+    container_name: book-cycle-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: bookcycle
-    ports:
-      - "3306:3306"
+      MYSQL_USER: bookuser
+      MYSQL_PASSWORD: 1234
+    networks:
+      - bookcycle-network
 
   redis:
     image: redis:7
     container_name: book-cycle-redis
-    ports:
-      - "6379:6379"
+    networks:
+      - bookcycle-network
+
+networks:
+  bookcycle-network:
+    driver: bridge
