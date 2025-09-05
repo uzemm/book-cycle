@@ -91,3 +91,7 @@ tasks.withType(JavaCompile).configureEach {
 clean {
 	delete file(querydslDir)
 }
+
+tasks.withType(ProcessResources).configureEach {
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
