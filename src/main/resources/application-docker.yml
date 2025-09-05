@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    hikari:
+      initializationFailTimeout: 0
+      connection-timeout: 30000
+    url: jdbc:mysql://book-cycle-db:3306/bookcycle?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: bookuser
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  data:
+    redis:
+      host: book-cycle-redis
+      port: 6379
+

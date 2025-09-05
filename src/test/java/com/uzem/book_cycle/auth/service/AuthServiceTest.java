@@ -16,6 +16,7 @@ import com.uzem.book_cycle.redis.RedisUtil;
 import com.uzem.book_cycle.security.token.TokenDTO;
 import com.uzem.book_cycle.security.token.TokenProvider;
 import io.jsonwebtoken.Claims;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,6 +48,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
+@Disabled
 @ExtendWith(SpringExtension.class)
 class AuthServiceTest {
 

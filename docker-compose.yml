@@ -1,34 +1,39 @@
-version: "3.9"
-
 services:
   app:
+    build: .
     image: uzemm/book-cycle:latest
     container_name: book-cycle-app
     depends_on:
       - db
       - redis
     networks:
-      - bookcycle-network
+      - default
     environment:
       SPRING_PROFILES_ACTIVE: docker
 
   db:
     image: mysql:8.0
-    container_name: book-cycle-mysql
+    container_name: book-cycle-db
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 1234
       MYSQL_DATABASE: bookcycle
       MYSQL_USER: bookuser
       MYSQL_PASSWORD: 1234
+    ports:
+      - "3306:3306"
     networks:
       - bookcycle-network
 
   redis:
     image: redis:7
     container_name: book-cycle-redis
-    networks:
-      - bookcycle-network
+    ports:
+      - "6379:6379"
+
+volumes:
+  db_data:   # ✅ 언더스코어로統一
 
 networks:
-  bookcycle-network:
+  default:
     driver: bridge
