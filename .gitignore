@@ -45,3 +45,6 @@ out/
 # MySQL runtime data
 mysql/data/
 *.sock
+
+bookcycle.pem
+bookcycle-seoul.pem
