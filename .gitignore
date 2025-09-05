@@ -1,11 +1,11 @@
-HELP.md
+### Gradle ###
 .gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+### STS (Spring Tool Suite) ###
 .apt_generated
 .classpath
 .factorypath
@@ -36,15 +36,27 @@ out/
 ### VS Code ###
 .vscode/
 
-### 환경변수 ###
-/application.yml
-/.env
-/secrets/
-/src/main/resources/application.yml
+### Logs ###
+*.log
+hs_err_pid*.log
 
-# MySQL runtime data
+### 환경변수 & 보안 ###
+/application.yml
+/src/main/resources/application.yml
+.env
+secrets/
+*.pem
+bookcycle*.pem
+
+### MySQL runtime data ###
 mysql/data/
 *.sock
 
-bookcycle.pem
-bookcycle-seoul.pem
+### Docker/Redis runtime data ###
+redis/data/
+
+### 불필요하게 딸려온 것들 ###
+book-cycle.git/
+book-cycle.git.bfg-report/
+bfg.jar
+tash
