@@ -31,5 +31,5 @@ jobs:
           REPOSITORY: bookcycle
           IMAGE_TAG: latest
         run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker build --build-arg JAR_FILE=build/libs/*.jar -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
