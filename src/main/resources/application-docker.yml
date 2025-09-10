@@ -36,4 +36,8 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
-
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

@@ -49,6 +49,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	// redisson
 	implementation 'org.redisson:redisson:3.50.0'
+	// actuator
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
 
 	compileOnly 'org.projectlombok:lombok'
