@@ -29,7 +29,11 @@ jobs:
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REPOSITORY: bookcycle
-          IMAGE_TAG: latest
+          IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build --build-arg JAR_FILE=build/libs/*.jar -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          docker build \
+            --build-arg JAR_FILE=build/libs/*.jar \
+            -t $REGISTRY/$REPOSITORY:$IMAGE_TAG \
+            -t $REGISTRY/$REPOSITORY:latest .
           docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+          docker push $REGISTRY/$REPOSITORY:latest
