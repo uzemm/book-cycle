@@ -1,39 +1,49 @@
-services:
-  app:
-    build: .
-    image: uzemm/book-cycle:latest
-    container_name: book-cycle-app
-    depends_on:
-      - db
-      - redis
-    networks:
-      - default
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
+version: "3.9"
 
+networks:
+  book-net:
+
+services:
   db:
-    image: mysql:8.0
+    image: 886708163390.dkr.ecr.ap-northeast-2.amazonaws.com/bookcycle:latest
     container_name: book-cycle-db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: bookcycle
       MYSQL_USER: bookuser
       MYSQL_PASSWORD: 1234
     ports:
       - "3306:3306"
     networks:
-      - bookcycle-network
+      - book-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7
     container_name: book-cycle-redis
+    restart: always
     ports:
       - "6379:6379"
+    networks:
+      - book-net
 
-volumes:
-  db_data:   # ✅ 언더스코어로統一
-
-networks:
-  default:
-    driver: bridge
+  app:
+    image: uzemm/book-cycle:latest
+    container_name: book-cycle-app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: "docker"
+    ports:
+      - "8080:8080"
+    networks:
+      - book-net
