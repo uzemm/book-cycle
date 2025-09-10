@@ -92,6 +92,7 @@ clean {
 	delete file(querydslDir)
 }
 
-tasks.withType(ProcessResources).configureEach {
+tasks.named('processResources') {
 	duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
+
